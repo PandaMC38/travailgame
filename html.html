@@ -19,7 +19,7 @@
             padding: 15px; box-sizing: border-box; z-index: 10;
         }
 
-        .panel-container { display: flex; flex-direction: column; gap: 15px; pointer-events: none; width: 280px; }
+        .panel-container { display: flex; flex-direction: column; gap: 15px; pointer-events: none; width: 300px; }
 
         .panel {
             background: rgba(30, 30, 36, 0.95); padding: 15px;
@@ -39,6 +39,14 @@
         .stat-label { font-size: 0.7rem; color: #888; text-transform: uppercase; }
         .stat-value { font-size: 1.2rem; font-weight: bold; color: #ffeb3b; }
         .stat-value.cyan { color: #00d2ff; }
+        
+        /* Mission Box */
+        .mission-box {
+            grid-column: span 2; 
+            border-color: #4db8ff; 
+            background: rgba(77, 184, 255, 0.05);
+            transition: all 0.3s ease;
+        }
         
         .toolbar { display: flex; flex-direction: column; gap: 6px; }
 
@@ -87,9 +95,21 @@
     <div id="ui-layer">
         <div class="panel-container">
             <div class="panel">
-                <h1>LogiNode v3.0</h1>
+                <h1>LogiNode v4.0</h1>
                 
                 <div class="dashboard-grid">
+                    <!-- NOUVEAU: Panneau de Mission -->
+                    <div class="stat-box mission-box" id="missionContainer">
+                        <div class="stat-label" id="missionTitle" style="color: #4db8ff; font-weight:bold;">Phase 1: Initialisation</div>
+                        <div style="font-size: 0.85rem; margin-top: 4px;" id="missionDesc">Livrez 20 données brutes (Bleu)</div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                            <div style="flex-grow: 1; background: #222; height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid #444;">
+                                <div id="missionBar" style="background: #4db8ff; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            <div id="missionText" style="font-size: 0.8rem; font-weight: bold; width: 45px; text-align: right;">0 / 20</div>
+                        </div>
+                    </div>
+
                     <div class="stat-box">
                         <div class="stat-label">Fonds Alloués</div>
                         <div class="stat-value" id="moneyDisplay">500 ¢</div>
@@ -112,23 +132,23 @@
                     
                     <hr style="border-color:#333; width:100%; margin: 2px 0;">
                     
-                    <button class="btn" onclick="setBuildMode('miner')">
+                    <button class="btn" onclick="setBuildMode('miner')" id="btn-miner">
                         <span style="width:12px;height:12px;background:#e74c3c;display:inline-block;"></span>
                         Extracteur <span style="color:#aaa;font-size:0.75rem;">(50¢)</span> <span class="shortcut">2</span>
                     </button>
-                    <button class="btn" onclick="setBuildMode('belt')">
+                    <button class="btn" onclick="setBuildMode('belt')" id="btn-belt">
                         <span style="width:12px;height:12px;background:#95a5a6;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">↑</span>
                         Convoyeur <span style="color:#aaa;font-size:0.75rem;">(10¢)</span> <span class="shortcut">3</span>
                     </button>
-                    <button class="btn" onclick="setBuildMode('splitter')">
+                    <button class="btn" onclick="setBuildMode('splitter')" id="btn-splitter">
                         <span style="width:12px;height:12px;background:#1abc9c;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">Y</span>
                         Répartiteur <span style="color:#aaa;font-size:0.75rem;">(50¢)</span> <span class="shortcut">4</span>
                     </button>
-                    <button class="btn" onclick="setBuildMode('upgrader')">
+                    <button class="btn" onclick="setBuildMode('upgrader')" id="btn-upgrader">
                         <span style="width:12px;height:12px;background:#e67e22;display:inline-block;"></span>
                         Traitement <span style="color:#aaa;font-size:0.75rem;">(100¢)</span> <span class="shortcut">5</span>
                     </button>
-                    <button class="btn" onclick="setBuildMode('assembler')">
+                    <button class="btn" onclick="setBuildMode('assembler')" id="btn-assembler">
                         <span style="width:12px;height:12px;background:#8e44ad;display:inline-block;"></span>
                         Assembleur <span style="color:#aaa;font-size:0.75rem;">(300¢)</span> <span class="shortcut">6</span>
                     </button>
@@ -142,10 +162,9 @@
                 </div>
 
                 <div class="tutorial">
-                    <strong>Nouveautés V3:</strong><br>
-                    - Glissez-déposez la souris pour construire à la chaîne.<br>
-                    - <strong>Répartiteur:</strong> Divise le flux à gauche et à droite.<br>
-                    - <strong>Assembleur:</strong> Fusionne 2 ressources vertes en 1 ressource violette (300¢).<br>
+                    <strong>Nouveautés V4:</strong><br>
+                    - Remplissez les <strong>Objectifs</strong> du panneau supérieur pour débloquer de nouvelles usines.<br>
+                    - Si vous livrez la mauvaise ressource, elle sera vendue mais ne fera pas avancer la mission !<br>
                     <br>🚨 <strong>Boss Key : [ÉCHAP]</strong>
                 </div>
             </div>
@@ -178,12 +197,22 @@
 
         // --- ETAT DU JEU ---
         const game = {
-            money: 500,
+            money: 600, // Un peu plus d'argent pour commencer
             gridWidth: 100,
             gridHeight: 100,
             grid: [],
             items: [],
-            deliveries: [], // Pour le calcul IPM
+            deliveries: [], 
+            
+            // Système de Progression (Missions)
+            missionIndex: 0,
+            missionProgress: 0,
+            missions: [
+                { title: "Phase 1: Collecte", desc: "Acheminez 20 Flux Bruts (Bleu) au Core.", type: 'raw', req: 20 },
+                { title: "Phase 2: Raffinage", desc: "Acheminez 30 Flux Traités (Vert). \nDébloque: Traitement & Répartiteur.", type: 'processed', req: 30 },
+                { title: "Phase 3: Haute Technologie", desc: "Acheminez 15 Flux Complexes (Violet). \nDébloque: Assembleur.", type: 'advanced', req: 15 },
+                { title: "Phase 4: Maintenance", desc: "Protocole terminé. Générez des profits.", type: 'none', req: 0 }
+            ],
             
             buildMode: 'cursor',
             currentDir: 0,
@@ -194,7 +223,7 @@
             worldX: 0, worldY: 0,
             
             // Gestion du Drag-to-build
-            paintButton: null, // null, 0 (gauche), 2 (droit)
+            paintButton: null,
             isMiddleDragging: false,
             lastMouse: { x: 0, y: 0 },
             
@@ -217,7 +246,7 @@
                 this.progress = 0;
                 this.gridX = startX; this.gridY = startY;
                 this.movingDir = -1;
-                this.type = 'raw'; // 'raw' (bleu), 'processed' (vert), 'advanced' (violet)
+                this.type = 'raw';
             }
         }
 
@@ -255,6 +284,13 @@
             if (game.grid.length === 0) initGrid();
         }
 
+        // --- VERIFICATIONS DES DÉBLOCAGES ---
+        function isUnlocked(mode) {
+            if (mode === 'splitter' || mode === 'upgrader') return game.missionIndex >= 1;
+            if (mode === 'assembler') return game.missionIndex >= 2;
+            return true; // cursor, pan, miner, belt, delete
+        }
+
         // --- GESTION CONSTRUCTION ---
         function tryBuild(gx, gy, isRightClick) {
             if (gx < 0 || gx >= game.gridWidth || gy < 0 || gy >= game.gridHeight) return;
@@ -267,12 +303,13 @@
             }
 
             if (tile.building || game.buildMode === 'cursor' || game.buildMode === 'pan') return;
+            if (!isUnlocked(game.buildMode)) return;
 
             // Construction
             const costs = { 'miner': 50, 'belt': 10, 'upgrader': 100, 'assembler': 300, 'splitter': 50 };
             
             if (game.money >= costs[game.buildMode]) {
-                if (game.buildMode === 'miner' && tile.resource !== 'node') return; // Minerai requis
+                if (game.buildMode === 'miner' && tile.resource !== 'node') return;
                 
                 game.money -= costs[game.buildMode];
                 
@@ -318,16 +355,36 @@
 
                 if (!currentTile) continue;
 
-                // Décision de direction au centre de la tuile
                 if (item.progress === 0) {
                     if (currentTile.building) {
                         let b = currentTile.building;
                         
                         if (b.type === 'core') {
-                            // Valeurs: Bleu=15, Vert=60, Violet=300
+                            // Valeurs monétaires
                             let val = item.type === 'raw' ? 15 : (item.type === 'processed' ? 60 : 300);
                             game.money += val;
-                            game.deliveries.push(Date.now()); // Pour IPM
+                            game.deliveries.push(Date.now());
+                            
+                            // GESTION DES MISSIONS
+                            let currentMission = game.missions[game.missionIndex];
+                            if (currentMission.type === item.type) {
+                                game.missionProgress++;
+                                
+                                // Mission Complétée !
+                                if (game.missionProgress >= currentMission.req) {
+                                    game.missionIndex++;
+                                    game.missionProgress = 0;
+                                    
+                                    // Effet visuel rapide sur le conteneur de mission
+                                    let mc = document.getElementById('missionContainer');
+                                    mc.style.backgroundColor = "rgba(46, 204, 113, 0.4)";
+                                    setTimeout(() => { mc.style.backgroundColor = "rgba(77, 184, 255, 0.05)"; }, 500);
+                                    
+                                    // S'assurer qu'on ne reste pas bloqué avec un outil verrouillé
+                                    setBuildMode('cursor');
+                                }
+                            }
+
                             updateUI();
                             game.items.splice(i, 1);
                             continue;
@@ -340,27 +397,23 @@
                             item.movingDir = b.dir;
                         }
                         else if (b.type === 'splitter') {
-                            // Alterne entre Gauche et Droite par rapport à sa direction
                             let dirLeft = (b.dir + 3) % 4;
                             let dirRight = (b.dir + 1) % 4;
                             item.movingDir = b.toggle ? dirLeft : dirRight;
-                            b.toggle = !b.toggle; // Inverse le basculeur
+                            b.toggle = !b.toggle;
                         }
                         else if (b.type === 'assembler') {
-                            // L'assembleur a besoin de 2 verts pour faire 1 violet
                             if (item.type === 'processed') {
                                 b.inventory++;
                                 if (b.inventory >= 2) {
                                     b.inventory = 0;
-                                    item.type = 'advanced'; // Devient violet
+                                    item.type = 'advanced'; 
                                     item.movingDir = b.dir;
                                 } else {
-                                    // Consomme l'objet et attend le suivant
                                     game.items.splice(i, 1);
                                     continue;
                                 }
                             } else {
-                                // Ne traite pas les autres objets (bloqué)
                                 item.movingDir = -1;
                             }
                         }
@@ -370,7 +423,6 @@
                                  let nx = item.gridX + DIRS[d].x;
                                  let ny = item.gridY + DIRS[d].y;
                                  let adj = game.grid[nx] && game.grid[nx][ny];
-                                 // Pousse vers n'importe quel bâtiment logistique
                                  if(adj && adj.building && ['belt', 'upgrader', 'splitter', 'assembler'].includes(adj.building.type)) {
                                     item.movingDir = d;
                                     pushed = true;
@@ -380,13 +432,11 @@
                              if(!pushed) item.movingDir = -1;
                         }
                     } else {
-                        item.movingDir = -1; // Bloqué dans la pampa
+                        item.movingDir = -1;
                     }
                 }
 
-                // Déplacement physique fluide
                 if (item.movingDir !== -1) {
-                    // Les objets violets sont un peu plus lents (lourds)
                     const speeds = { 'raw': 0.05, 'processed': 0.04, 'advanced': 0.03 };
                     item.progress += speeds[item.type];
                     
@@ -404,10 +454,8 @@
                 }
             }
 
-            // Calcul IPM (Items per minute) chaque seconde
             if (game.tick % 60 === 0) {
                 let now = Date.now();
-                // Garder seulement les livraisons de la dernière minute
                 game.deliveries = game.deliveries.filter(t => now - t < 60000);
                 document.getElementById('ipmDisplay').innerText = game.deliveries.length;
             }
@@ -433,12 +481,10 @@
             ctx.save();
             ctx.translate(game.camera.x, game.camera.y);
 
-            // Limites carte
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
             ctx.lineWidth = 2;
             ctx.strokeRect(0, 0, game.gridWidth * TILE_SIZE, game.gridHeight * TILE_SIZE);
 
-            // Culling optimisé
             let startX = Math.max(0, Math.floor(-game.camera.x / TILE_SIZE));
             let startY = Math.max(0, Math.floor(-game.camera.y / TILE_SIZE));
             let endX = Math.min(game.gridWidth, startX + Math.ceil(canvas.width / TILE_SIZE) + 1);
@@ -453,7 +499,7 @@
                     if (tile.resource === 'node') {
                         ctx.fillStyle = '#2980b9';
                         ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
-                        ctx.fillStyle = '#1abc9c'; // Reflets cyan
+                        ctx.fillStyle = '#1abc9c';
                         ctx.fillRect(px + 8, py + 8, 8, 8);
                         ctx.fillRect(px + 22, py + 18, 6, 6);
                     }
@@ -478,17 +524,16 @@
                             ctx.restore();
                         }
                         else if (b.type === 'splitter') {
-                            ctx.fillStyle = '#1abc9c'; // Cyan
+                            ctx.fillStyle = '#1abc9c';
                             ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             ctx.fillStyle = '#16a085';
                             ctx.fillRect(px + 10, py + 10, TILE_SIZE - 20, TILE_SIZE - 20);
                             
-                            // Flèches alternées
                             ctx.fillStyle = '#fff';
                             ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
                             ctx.font = '12px Arial';
-                            if(b.toggle) ctx.fillText('←', 0, -5); // Gauche
-                            else ctx.fillText('→', 0, -5); // Droite
+                            if(b.toggle) ctx.fillText('←', 0, -5); 
+                            else ctx.fillText('→', 0, -5); 
                             ctx.restore();
                         }
                         else if (b.type === 'upgrader') {
@@ -500,18 +545,16 @@
                             ctx.fillStyle = '#fff'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2); ctx.fillText('↑', 0, 0); ctx.restore();
                         }
                         else if (b.type === 'assembler') {
-                            ctx.fillStyle = '#8e44ad'; // Violet
+                            ctx.fillStyle = '#8e44ad';
                             ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             ctx.fillStyle = '#2c3e50';
                             ctx.fillRect(px + 8, py + 8, TILE_SIZE - 16, TILE_SIZE - 16);
                             
-                            // Indicateur d'inventaire
                             if (b.inventory > 0) {
-                                ctx.fillStyle = '#2ecc71'; // Un point vert pour dire "1 en stock"
+                                ctx.fillStyle = '#2ecc71';
                                 ctx.beginPath(); ctx.arc(px + TILE_SIZE/2, py + TILE_SIZE/2, 4, 0, Math.PI * 2); ctx.fill();
                             }
                             
-                            // Direction de sortie
                             ctx.fillStyle = '#fff'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
                             ctx.font = '10px Arial'; ctx.fillText('▲', 0, -12); ctx.restore();
                         }
@@ -531,7 +574,6 @@
                 }
             }
 
-            // Objets en mouvement
             for (let item of game.items) {
                 if (item.x >= startX - 1 && item.x <= endX && item.y >= startY - 1 && item.y <= endY) {
                     
@@ -542,14 +584,12 @@
                     let px = item.x * TILE_SIZE + TILE_SIZE / 2;
                     let py = item.y * TILE_SIZE + TILE_SIZE / 2;
                     ctx.beginPath();
-                    // L'objet violet est un peu plus grand
                     ctx.arc(px, py, item.type === 'advanced' ? 8 : 5, 0, Math.PI * 2);
                     ctx.fill();
                 }
             }
             ctx.shadowBlur = 0;
 
-            // Curseur (Survol)
             let gx = Math.floor(game.worldX / TILE_SIZE);
             let gy = Math.floor(game.worldY / TILE_SIZE);
             
@@ -558,7 +598,6 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-                // Preview du bâtiment
                 if (['belt', 'miner', 'upgrader', 'splitter', 'assembler'].includes(game.buildMode)) {
                     ctx.globalAlpha = 0.5;
                     let px = gx * TILE_SIZE; let py = gy * TILE_SIZE;
@@ -586,25 +625,57 @@
 
         // --- INTERACTIONS UI & SOURIS ---
         function updateUI() {
+            // Stats
             document.getElementById('moneyDisplay').innerText = game.money + ' ¢';
             document.getElementById('dirDisplay').innerText = DIRS[game.currentDir].name + ' (' + DIRS[game.currentDir].symbol + ')';
             
             let gx = Math.floor(game.worldX / TILE_SIZE);
             let gy = Math.floor(game.worldY / TILE_SIZE);
             document.getElementById('coordsDisplay').innerText = `POS: X:${gx}, Y:${gy}`;
+
+            // Missions
+            let cm = game.missions[game.missionIndex];
+            document.getElementById('missionTitle').innerText = cm.title;
+            
+            // On gère les retours à la ligne dans la description
+            document.getElementById('missionDesc').innerHTML = cm.desc.replace('\n', '<br>');
+            
+            if (cm.req > 0) {
+                let pct = Math.min((game.missionProgress / cm.req) * 100, 100);
+                document.getElementById('missionBar').style.width = pct + '%';
+                document.getElementById('missionText').innerText = game.missionProgress + ' / ' + cm.req;
+            } else {
+                document.getElementById('missionBar').style.width = '100%';
+                document.getElementById('missionText').innerText = "∞";
+            }
+
+            // Déblocages (Verrouillage visuel des boutons)
+            document.getElementById('btn-splitter').style.display = isUnlocked('splitter') ? 'flex' : 'none';
+            document.getElementById('btn-upgrader').style.display = isUnlocked('upgrader') ? 'flex' : 'none';
+            document.getElementById('btn-assembler').style.display = isUnlocked('assembler') ? 'flex' : 'none';
         }
 
         function setBuildMode(mode) {
+            // Sécurité si on utilise les raccourcis clavier
+            if (!isUnlocked(mode)) return;
+            
             game.buildMode = mode;
             document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
             let index = ['cursor', 'pan', 'miner', 'belt', 'splitter', 'upgrader', 'assembler', 'delete'].indexOf(mode);
-            if(index >= 0) document.querySelectorAll('.btn')[index].classList.add('active');
+            // On cherche le bouton par ID car les index changent avec le display:none
+            if (mode === 'cursor') document.querySelectorAll('.btn')[0].classList.add('active');
+            if (mode === 'pan') document.querySelectorAll('.btn')[1].classList.add('active');
+            if (mode === 'delete') document.querySelectorAll('.btn')[document.querySelectorAll('.btn').length - 1].classList.add('active');
+            
+            let btnId = `btn-${mode}`;
+            let b = document.getElementById(btnId);
+            if(b) b.classList.add('active');
         }
 
         // Clavier
         window.addEventListener('keydown', (e) => {
             game.keys[e.key.toLowerCase()] = true;
-            game.keys[e.key] = true; // Support majuscules
+            game.keys[e.key] = true; 
             
             if (e.key.toLowerCase() === 'r') {
                 game.currentDir = (game.currentDir + 1) % 4;
@@ -613,7 +684,6 @@
             if (e.key === 'Escape') {
                 let bs = document.getElementById('boss-screen');
                 if(bs.style.display !== 'block') {
-                    // Mettre à jour l'heure du fake boss screen
                     let now = new Date();
                     document.getElementById('fake-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
                     bs.style.display = 'block';
@@ -640,7 +710,6 @@
 
         // Souris
         window.addEventListener('mousemove', (e) => {
-            // Déplacement Caméra (Drag map)
             if (game.paintButton === 1 || (game.paintButton === 0 && game.buildMode === 'pan')) {
                 game.camera.x += e.clientX - game.lastMouse.x;
                 game.camera.y += e.clientY - game.lastMouse.y;
@@ -654,7 +723,6 @@
             game.worldX = e.clientX - game.camera.x;
             game.worldY = e.clientY - game.camera.y;
             
-            // Construction en Continu (Drag-to-build)
             if (game.paintButton !== null && game.paintButton !== 1 && game.buildMode !== 'pan' && game.buildMode !== 'cursor') {
                 let gx = Math.floor(game.worldX / TILE_SIZE);
                 let gy = Math.floor(game.worldY / TILE_SIZE);
@@ -667,9 +735,9 @@
         canvas.addEventListener('mousedown', (e) => {
             game.lastMouse.x = e.clientX;
             game.lastMouse.y = e.clientY;
-            game.paintButton = e.button; // 0=Gauche, 1=Molette, 2=Droit
+            game.paintButton = e.button; 
             
-            if (e.button === 1) e.preventDefault(); // Eviter scroll auto navigateur
+            if (e.button === 1) e.preventDefault(); 
             
             if (game.buildMode !== 'pan' && e.button !== 1) {
                 let gx = Math.floor(game.worldX / TILE_SIZE);
