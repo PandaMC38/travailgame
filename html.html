@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiNode - Dashboard System V5</title>
+    <title>LogiNode - Dashboard System V6</title>
     <style>
         /* Styles de base - Thème sombre "IDE / Dashboard" */
         body {
@@ -27,8 +27,12 @@
             box-shadow: 0 8px 25px rgba(0,0,0,0.7); max-height: 95vh; overflow-y: auto;
         }
 
-        h1 { margin: 0 0 10px 0; font-size: 1.1rem; color: #4db8ff; text-transform: uppercase; letter-spacing: 1px; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        h1 { margin: 0; font-size: 1.1rem; color: #4db8ff; text-transform: uppercase; letter-spacing: 1px; }
         
+        .sys-btn { background: #333; color: #aaa; border: 1px solid #555; border-radius: 4px; padding: 3px 8px; font-size: 0.7rem; cursor: pointer; }
+        .sys-btn:hover { background: #e74c3c; color: #fff; border-color: #fff; }
+
         /* Dashboard Stats */
         .dashboard-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;
@@ -75,9 +79,19 @@
 
         .tutorial { font-size: 0.75rem; color: #999; margin-top: 15px; line-height: 1.4; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;}
         .tutorial strong { color: #fff; }
+
+        /* Notifications */
+        #notification {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(46, 204, 113, 0.9); color: #fff; padding: 8px 20px;
+            border-radius: 20px; font-size: 0.9rem; font-weight: bold;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
+        }
     </style>
 </head>
 <body>
+
+    <div id="notification">Jeu Sauvegardé</div>
 
     <!-- Faux écran de travail (Boss Key) -->
     <div id="boss-screen">
@@ -95,7 +109,10 @@
     <div id="ui-layer">
         <div class="panel-container">
             <div class="panel">
-                <h1>LogiNode v5.0</h1>
+                <div class="header-flex">
+                    <h1>LogiNode v6.0</h1>
+                    <button class="sys-btn" onclick="resetGame()" title="Effacer la sauvegarde et recommencer">RESET</button>
+                </div>
                 
                 <div class="dashboard-grid">
                     <div class="stat-box mission-box" id="missionContainer">
@@ -139,21 +156,25 @@
                         <span style="width:12px;height:12px;background:#95a5a6;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">↑</span>
                         Convoyeur <span style="color:#aaa;font-size:0.7rem;">(10¢)</span> <span class="shortcut">3</span>
                     </button>
+                    <button class="btn" onclick="setBuildMode('tunnel')" id="btn-tunnel" style="display:none;">
+                        <span style="width:12px;height:12px;background:#2c3e50;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;border-radius:2px;">U</span>
+                        Tunnel <span style="color:#aaa;font-size:0.7rem;">(150¢)</span> <span class="shortcut">4</span>
+                    </button>
                     <button class="btn" onclick="setBuildMode('splitter')" id="btn-splitter" style="display:none;">
                         <span style="width:12px;height:12px;background:#1abc9c;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">Y</span>
-                        Répartiteur <span style="color:#aaa;font-size:0.7rem;">(50¢)</span> <span class="shortcut">4</span>
+                        Répartiteur <span style="color:#aaa;font-size:0.7rem;">(50¢)</span> <span class="shortcut">5</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('upgrader')" id="btn-upgrader" style="display:none;">
                         <span style="width:12px;height:12px;background:#e67e22;display:inline-block;"></span>
-                        Traitement <span style="color:#aaa;font-size:0.7rem;">(100¢)</span> <span class="shortcut">5</span>
+                        Traitement <span style="color:#aaa;font-size:0.7rem;">(100¢)</span> <span class="shortcut">6</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('assembler')" id="btn-assembler" style="display:none;">
                         <span style="width:12px;height:12px;background:#8e44ad;display:inline-block;"></span>
-                        Assembleur <span style="color:#aaa;font-size:0.7rem;">(300¢)</span> <span class="shortcut">6</span>
+                        Assembleur <span style="color:#aaa;font-size:0.7rem;">(300¢)</span> <span class="shortcut">7</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('integrator')" id="btn-integrator" style="display:none;">
                         <span style="width:12px;height:12px;background:#ecf0f1;display:inline-block;border:1px solid #333;"></span>
-                        Intégrateur <span style="color:#aaa;font-size:0.7rem;">(500¢)</span> <span class="shortcut">7</span>
+                        Intégrateur <span style="color:#aaa;font-size:0.7rem;">(500¢)</span> <span class="shortcut">8</span>
                     </button>
                     
                     <hr style="border-color:#333; width:100%; margin: 2px 0;">
@@ -165,14 +186,9 @@
                 </div>
 
                 <div class="tutorial">
-                    <strong>Guide de Crafting :</strong><br>
-                    🔵 Donnée (Base)<br>
-                    🟠 Logique (Phase 3)<br>
-                    🟣 Quantique (Phase 4)<br><br>
-                    🟢 = 🔵 + Traitement<br>
-                    🟡 = 🟠 + Traitement<br>
-                    🟪 = 🟢 + 🟡 (Assembleur)<br>
-                    ⬜️ = 🟪 + 🟣 (Intégrateur)<br>
+                    <strong>Nouveautés V6 :</strong><br>
+                    - 💾 <strong>Auto-Save:</strong> Ta progression est sauvegardée automatiquement.<br>
+                    - 🚇 <strong>Tunnels:</strong> Placez 2 tunnels alignés pour faire sauter vos ressources sous vos usines (Portée max: 5 cases).<br>
                     <br>🚨 <strong>Boss Key : [ÉCHAP]</strong>
                 </div>
             </div>
@@ -209,13 +225,14 @@
             grid: [],
             items: [],
             deliveries: [], 
+            particles: [], // Effets visuels (ex: +15¢)
             
             // Progression et Missions
             missionIndex: 0,
             missionProgress: 0,
             missions: [
                 { title: "Phase 1: Données Brutes", desc: "Acheminez 20 Flux Données (Bleu) au Core.", type: 'raw_blue', req: 20 },
-                { title: "Phase 2: Traitement", desc: "Acheminez 20 Flux Traités (Vert).\n<span style='color:#2ecc71'>Débloque: Traitement & Répartiteur.</span>", type: 'proc_blue', req: 20 },
+                { title: "Phase 2: Logistique", desc: "Acheminez 20 Flux Traités (Vert).\n<span style='color:#2ecc71'>Débloque: Traitement, Tunnel & Répartiteur.</span>", type: 'proc_blue', req: 20 },
                 { title: "Phase 3: Assemblage", desc: "Nouveaux gisements: Logique (Orange).\nTraitez-les (Jaune) et combinez (Vert+Jaune) dans l'Assembleur.\nLivrez 15 Composants (Violet).\n<span style='color:#2ecc71'>Débloque: Assembleur, Mine Orange.</span>", type: 'advanced_purple', req: 15 },
                 { title: "Phase 4: Intégration", desc: "Nouveaux gisements: Quantique (Rose).\nCombinez Violet + Rose dans l'Intégrateur.\nLivrez 10 Flux Omega (Blanc).\n<span style='color:#2ecc71'>Débloque: Intégrateur, Mine Rose.</span>", type: 'omega', req: 10 },
                 { title: "Phase 5: Infinie", desc: "Système optimisé. Maximisez les profits.", type: 'none', req: 0 }
@@ -250,10 +267,84 @@
                 this.progress = 0;
                 this.gridX = startX; this.gridY = startY;
                 this.movingDir = -1;
-                this.type = type; // raw_blue, proc_blue, raw_orange, proc_orange, advanced_purple, raw_pink, omega
+                this.type = type; 
             }
         }
 
+        class Particle {
+            constructor(x, y, text, color) {
+                this.x = x; this.y = y; this.text = text; this.color = color;
+                this.life = 60; this.maxLife = 60;
+            }
+        }
+
+        // --- SYSTEME DE SAUVEGARDE ---
+        function saveGame() {
+            let saveData = {
+                money: game.money,
+                missionIndex: game.missionIndex,
+                missionProgress: game.missionProgress,
+                gridData: []
+            };
+            for(let x=0; x<game.gridWidth; x++) {
+                for(let y=0; y<game.gridHeight; y++) {
+                    let t = game.grid[x][y];
+                    if(t.resource || t.building) {
+                        saveData.gridData.push({x: x, y: y, r: t.resource, b: t.building});
+                    }
+                }
+            }
+            localStorage.setItem('loginode_save_v6', JSON.stringify(saveData));
+            showNotification("Sauvegarde Automatique effectuée");
+        }
+
+        function loadGame() {
+            let saved = localStorage.getItem('loginode_save_v6');
+            if(saved) {
+                try {
+                    let data = JSON.parse(saved);
+                    game.money = data.money;
+                    game.missionIndex = data.missionIndex || 0;
+                    game.missionProgress = data.missionProgress || 0;
+                    
+                    game.grid = [];
+                    for (let x = 0; x < game.gridWidth; x++) {
+                        game.grid[x] = [];
+                        for (let y = 0; y < game.gridHeight; y++) {
+                            game.grid[x][y] = new Tile(x, y);
+                        }
+                    }
+                    data.gridData.forEach(d => {
+                        if(game.grid[d.x] && game.grid[d.x][d.y]) {
+                            game.grid[d.x][d.y].resource = d.r;
+                            game.grid[d.x][d.y].building = d.b;
+                        }
+                    });
+                    
+                    game.camera.x = Math.floor(window.innerWidth / 2 - (game.core.x * TILE_SIZE + TILE_SIZE / 2));
+                    game.camera.y = Math.floor(window.innerHeight / 2 - (game.core.y * TILE_SIZE + TILE_SIZE / 2));
+                    showNotification("Partie chargée avec succès !");
+                    return true;
+                } catch(e) { console.error("Sauvegarde corrompue", e); }
+            }
+            return false;
+        }
+
+        function resetGame() {
+            if(confirm("Êtes-vous sûr de vouloir effacer votre sauvegarde et tout recommencer ?")) {
+                localStorage.removeItem('loginode_save_v6');
+                location.reload();
+            }
+        }
+
+        function showNotification(msg) {
+            let notif = document.getElementById('notification');
+            notif.innerText = msg;
+            notif.style.opacity = 1;
+            setTimeout(() => { notif.style.opacity = 0; }, 2000);
+        }
+
+        // --- INITIALISATION ---
         function initGrid() {
             game.grid = [];
             for (let x = 0; x < game.gridWidth; x++) {
@@ -267,7 +358,6 @@
             game.camera.x = Math.floor(window.innerWidth / 2 - (game.core.x * TILE_SIZE + TILE_SIZE / 2));
             game.camera.y = Math.floor(window.innerHeight / 2 - (game.core.y * TILE_SIZE + TILE_SIZE / 2));
 
-            // Génération de 3 types de minerais (Bleu 50%, Orange 30%, Rose 20%)
             let nodesPlaced = 0;
             while(nodesPlaced < 120) {
                 let rx = Math.floor(Math.random() * game.gridWidth);
@@ -286,11 +376,10 @@
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            if (game.grid.length === 0) initGrid();
         }
 
         function isUnlocked(mode) {
-            if (mode === 'splitter' || mode === 'upgrader') return game.missionIndex >= 1;
+            if (mode === 'splitter' || mode === 'upgrader' || mode === 'tunnel') return game.missionIndex >= 1;
             if (mode === 'assembler') return game.missionIndex >= 2;
             if (mode === 'integrator') return game.missionIndex >= 3;
             return true;
@@ -308,10 +397,9 @@
             if (tile.building || game.buildMode === 'cursor' || game.buildMode === 'pan') return;
             if (!isUnlocked(game.buildMode)) return;
 
-            const costs = { 'miner': 50, 'belt': 10, 'upgrader': 100, 'assembler': 300, 'splitter': 50, 'integrator': 500 };
+            const costs = { 'miner': 50, 'belt': 10, 'upgrader': 100, 'assembler': 300, 'splitter': 50, 'integrator': 500, 'tunnel': 150 };
             
             if (game.money >= costs[game.buildMode]) {
-                // Restrictions de minage selon la phase
                 if (game.buildMode === 'miner') {
                     if (!tile.resource) return;
                     if (tile.resource === 'node_orange' && game.missionIndex < 2) return;
@@ -334,6 +422,11 @@
         function update() {
             if (document.getElementById('boss-screen').style.display === 'block') return;
             game.tick++;
+
+            // Auto-Save toutes les 10 secondes (600 ticks à 60fps)
+            if (game.tick > 0 && game.tick % 600 === 0) {
+                saveGame();
+            }
 
             const camSpeed = 12;
             if (game.keys['ArrowUp'] || game.keys['z'] || game.keys['w']) game.camera.y += camSpeed;
@@ -359,6 +452,13 @@
                 }
             }
 
+            // Mise à jour des particules
+            for(let i=game.particles.length-1; i>=0; i--) {
+                game.particles[i].life -= 1.5;
+                game.particles[i].y -= 0.5;
+                if(game.particles[i].life <= 0) game.particles.splice(i, 1);
+            }
+
             // 2. Mouvement des objets
             for (let i = game.items.length - 1; i >= 0; i--) {
                 let item = game.items[i];
@@ -371,10 +471,18 @@
                         let b = currentTile.building;
                         
                         if (b.type === 'core') {
-                            // Economie
                             const values = { 'raw_blue': 15, 'proc_blue': 40, 'raw_orange': 20, 'proc_orange': 50, 'advanced_purple': 200, 'raw_pink': 100, 'omega': 1000 };
-                            game.money += values[item.type] || 0;
+                            let val = values[item.type] || 0;
+                            game.money += val;
                             game.deliveries.push(Date.now());
+                            
+                            // Pop-up text (Juice)
+                            game.particles.push(new Particle(
+                                item.x * TILE_SIZE + TILE_SIZE/2, 
+                                item.y * TILE_SIZE + TILE_SIZE/2 - 10, 
+                                `+${val}¢`, 
+                                '#2ecc71'
+                            ));
                             
                             // Missions
                             let cm = game.missions[game.missionIndex];
@@ -396,6 +504,25 @@
                         else if (b.type === 'belt') {
                             item.movingDir = b.dir;
                         } 
+                        else if (b.type === 'tunnel') {
+                            // Cherche un tunnel de sortie correspondant dans la direction (jusqu'à 5 cases)
+                            let foundExit = false;
+                            for(let dist=1; dist<=5; dist++) {
+                                let nx = item.gridX + DIRS[b.dir].x * dist;
+                                let ny = item.gridY + DIRS[b.dir].y * dist;
+                                let target = game.grid[nx] && game.grid[nx][ny];
+                                if (target && target.building && target.building.type === 'tunnel' && target.building.dir === b.dir) {
+                                    // Téléportation de l'item à la sortie
+                                    item.gridX = nx; item.gridY = ny;
+                                    item.x = nx; item.y = ny;
+                                    item.movingDir = b.dir; // continue in same dir
+                                    foundExit = true;
+                                    break;
+                                }
+                            }
+                            // S'il n'y a pas de sortie, il agit comme un convoyeur normal ou bloque
+                            if(!foundExit) item.movingDir = b.dir;
+                        }
                         else if (b.type === 'splitter') {
                             let dirLeft = (b.dir + 3) % 4;
                             let dirRight = (b.dir + 1) % 4;
@@ -408,7 +535,6 @@
                             item.movingDir = b.dir;
                         }
                         else if (b.type === 'assembler') {
-                            // Recette: Vert (proc_blue) + Jaune (proc_orange) = Violet (advanced_purple)
                             if (item.type === 'proc_blue' && b.inventory.proc_blue < 1) {
                                 b.inventory.proc_blue++;
                                 if (b.inventory.proc_orange >= 1) {
@@ -425,7 +551,6 @@
                             } else { item.movingDir = -1; }
                         }
                         else if (b.type === 'integrator') {
-                            // Recette: Violet (advanced_purple) + Rose (raw_pink) = Blanc (omega)
                             if (item.type === 'advanced_purple' && b.inventory.advanced_purple < 1) {
                                 b.inventory.advanced_purple++;
                                 if (b.inventory.raw_pink >= 1) {
@@ -447,7 +572,7 @@
                                  let nx = item.gridX + DIRS[d].x;
                                  let ny = item.gridY + DIRS[d].y;
                                  let adj = game.grid[nx] && game.grid[nx][ny];
-                                 if(adj && adj.building && ['belt', 'upgrader', 'splitter', 'assembler', 'integrator'].includes(adj.building.type)) {
+                                 if(adj && adj.building && ['belt', 'tunnel', 'upgrader', 'splitter', 'assembler', 'integrator'].includes(adj.building.type)) {
                                     item.movingDir = d; pushed = true; break;
                                  }
                              }
@@ -529,6 +654,14 @@
                             ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
                             let offset = (game.tick % 20) / 20 * 10; ctx.font = '14px Arial'; ctx.fillText('↑', 0, -5 + offset); ctx.fillText('↑', 0, 10 + offset); ctx.restore();
                         }
+                        else if (b.type === 'tunnel') {
+                            ctx.fillStyle = '#2c3e50'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                            ctx.fillStyle = '#000'; // Trou sombre
+                            ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
+                            ctx.fillRect(-12, -18, 24, 20); // Hatch at the "top"
+                            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-14, -20, 28, 6); // Metal border
+                            ctx.restore();
+                        }
                         else if (b.type === 'splitter') {
                             ctx.fillStyle = '#1abc9c'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             ctx.fillStyle = '#16a085'; ctx.fillRect(px + 10, py + 10, TILE_SIZE - 20, TILE_SIZE - 20);
@@ -543,19 +676,15 @@
                         else if (b.type === 'assembler') {
                             ctx.fillStyle = '#8e44ad'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             ctx.fillStyle = '#2c3e50'; ctx.fillRect(px + 8, py + 8, TILE_SIZE - 16, TILE_SIZE - 16);
-                            // Indicateurs (Vert et Jaune)
                             if (b.inventory.proc_blue > 0) { ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(px + TILE_SIZE/2 - 5, py + TILE_SIZE/2, 3, 0, Math.PI * 2); ctx.fill(); }
                             if (b.inventory.proc_orange > 0) { ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(px + TILE_SIZE/2 + 5, py + TILE_SIZE/2, 3, 0, Math.PI * 2); ctx.fill(); }
-                            
                             ctx.fillStyle = '#fff'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2); ctx.font = '10px Arial'; ctx.fillText('▲', 0, -12); ctx.restore();
                         }
                         else if (b.type === 'integrator') {
                             ctx.fillStyle = '#ecf0f1'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             ctx.fillStyle = '#2c3e50'; ctx.beginPath(); ctx.arc(px+TILE_SIZE/2, py+TILE_SIZE/2, 12, 0, Math.PI*2); ctx.fill();
-                            // Indicateurs (Violet et Rose)
                             if (b.inventory.advanced_purple > 0) { ctx.fillStyle = '#9b59b6'; ctx.beginPath(); ctx.arc(px + TILE_SIZE/2 - 5, py + TILE_SIZE/2, 3, 0, Math.PI * 2); ctx.fill(); }
                             if (b.inventory.raw_pink > 0) { ctx.fillStyle = '#e84393'; ctx.beginPath(); ctx.arc(px + TILE_SIZE/2 + 5, py + TILE_SIZE/2, 3, 0, Math.PI * 2); ctx.fill(); }
-                            
                             ctx.fillStyle = '#000'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2); ctx.font = '10px Arial'; ctx.fillText('▲', 0, -12); ctx.restore();
                         }
                         else if (b.type === 'miner') {
@@ -569,7 +698,6 @@
             // Dessin des Objets
             for (let item of game.items) {
                 if (item.x >= startX - 1 && item.x <= endX && item.y >= startY - 1 && item.y <= endY) {
-                    
                     let colors = {
                         'raw_blue': '#00d2ff', 'proc_blue': '#2ecc71',
                         'raw_orange': '#ff9f43', 'proc_orange': '#feca57',
@@ -589,15 +717,27 @@
             }
             ctx.shadowBlur = 0;
 
+            // Dessin des Particules (Textes de gain)
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 16px Arial';
+            for (let p of game.particles) {
+                if (p.x/TILE_SIZE >= startX && p.x/TILE_SIZE <= endX && p.y/TILE_SIZE >= startY && p.y/TILE_SIZE <= endY) {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+                    ctx.fillText(p.text, p.x, p.y);
+                }
+            }
+            ctx.globalAlpha = 1.0;
+
             let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
             if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight && !game.isMiddleDragging) {
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2; ctx.strokeRect(gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-                if (['belt', 'miner', 'upgrader', 'splitter', 'assembler', 'integrator'].includes(game.buildMode)) {
+                if (['belt', 'miner', 'upgrader', 'splitter', 'assembler', 'integrator', 'tunnel'].includes(game.buildMode)) {
                     ctx.globalAlpha = 0.5; let px = gx * TILE_SIZE; let py = gy * TILE_SIZE;
                     ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(game.currentDir * Math.PI / 2);
                     
                     if (game.buildMode === 'belt') { ctx.fillStyle = '#34495e'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('↑', 0, 0); }
+                    else if (game.buildMode === 'tunnel') { ctx.fillStyle = '#2c3e50'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#111'; ctx.fillRect(-12,-18,24,20); }
                     else if (game.buildMode === 'upgrader') { ctx.fillStyle = '#e67e22'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('↑', 0, 0); }
                     else if (game.buildMode === 'splitter') { ctx.fillStyle = '#1abc9c'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('Y', 0, 0); }
                     else if (game.buildMode === 'assembler') { ctx.fillStyle = '#8e44ad'; ctx.fillRect(-18, -18, 36, 36); }
@@ -633,6 +773,7 @@
                 document.getElementById('missionText').innerText = "∞";
             }
 
+            document.getElementById('btn-tunnel').style.display = isUnlocked('tunnel') ? 'flex' : 'none';
             document.getElementById('btn-splitter').style.display = isUnlocked('splitter') ? 'flex' : 'none';
             document.getElementById('btn-upgrader').style.display = isUnlocked('upgrader') ? 'flex' : 'none';
             document.getElementById('btn-assembler').style.display = isUnlocked('assembler') ? 'flex' : 'none';
@@ -666,10 +807,11 @@
             if(e.key.toLowerCase() === 'm') setBuildMode('pan');
             if(e.key === '2') setBuildMode('miner');
             if(e.key === '3') setBuildMode('belt');
-            if(e.key === '4') setBuildMode('splitter');
-            if(e.key === '5') setBuildMode('upgrader');
-            if(e.key === '6') setBuildMode('assembler');
-            if(e.key === '7') setBuildMode('integrator');
+            if(e.key === '4') setBuildMode('tunnel');
+            if(e.key === '5') setBuildMode('splitter');
+            if(e.key === '6') setBuildMode('upgrader');
+            if(e.key === '7') setBuildMode('assembler');
+            if(e.key === '8') setBuildMode('integrator');
             if(e.key.toLowerCase() === 'x') setBuildMode('delete');
         });
         
@@ -716,8 +858,18 @@
             tbody.innerHTML = html;
         }
 
+        // --- DEMARRAGE ---
         window.addEventListener('resize', resize);
-        generateFakeData(); resize(); updateUI(); gameLoop();
+        generateFakeData(); 
+        resize(); 
+        
+        // Tente de charger une partie, sinon initialise une nouvelle grille
+        if (!loadGame()) {
+            initGrid();
+        }
+        
+        updateUI(); 
+        gameLoop();
     </script>
 </body>
 </html>
