@@ -12,8 +12,8 @@
             background-color: #1e1e24;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; /* Pas de scroll */
-            user-select: none; /* Empêche la sélection de texte accidentelle en cliquant */
+            overflow: hidden;
+            user-select: none;
         }
 
         /* Interface Utilisateur (UI) */
@@ -22,7 +22,8 @@
             top: 0;
             left: 0;
             width: 100%;
-            pointer-events: none; /* Laisse passer les clics vers le canvas sauf sur les boutons */
+            height: 100%;
+            pointer-events: none;
             display: flex;
             justify-content: space-between;
             padding: 15px;
@@ -30,23 +31,31 @@
             z-index: 10;
         }
 
+        .panel-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+        }
+
         .panel {
             background: rgba(43, 43, 54, 0.9);
             padding: 15px 20px;
             border-radius: 8px;
             border: 1px solid #444;
-            pointer-events: auto; /* Réactive les clics pour les panneaux */
+            pointer-events: auto;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         h1 { margin: 0 0 10px 0; font-size: 1.2rem; color: #4db8ff; text-transform: uppercase; letter-spacing: 1px; }
-        
         .stats { font-size: 1.5rem; font-weight: bold; color: #ffeb3b; margin-bottom: 15px;}
         
         .toolbar {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         .btn {
@@ -72,13 +81,10 @@
             padding: 2px 6px;
             border-radius: 3px;
             font-size: 0.7rem;
-            float: right;
+            margin-left: auto;
         }
 
-        /* Le Canvas du jeu */
-        #gameCanvas {
-            display: block;
-        }
+        #gameCanvas { display: block; }
 
         /* Faux écran de travail (Boss Key) */
         #boss-screen {
@@ -93,26 +99,12 @@
             box-sizing: border-box;
         }
 
-        .fake-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .fake-table th, .fake-table td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-            font-size: 12px;
-        }
+        .fake-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .fake-table th, .fake-table td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; }
         .fake-table th { background: #f0f0f0; }
 
-        .tutorial {
-            font-size: 0.85rem;
-            color: #aaa;
-            margin-top: 15px;
-            max-width: 250px;
-            line-height: 1.4;
-        }
+        .tutorial { font-size: 0.85rem; color: #aaa; margin-top: 15px; max-width: 250px; line-height: 1.4; }
+        .tutorial strong { color: #fff; }
     </style>
 </head>
 <body>
@@ -124,53 +116,72 @@
             <thead>
                 <tr><th>ID Transaction</th><th>Date</th><th>Statut</th><th>Volume (kO)</th><th>Serveur Cible</th></tr>
             </thead>
-            <tbody id="fake-table-body">
-                <!-- Rempli par JS -->
-            </tbody>
+            <tbody id="fake-table-body"></tbody>
         </table>
     </div>
 
     <!-- Interface du jeu -->
     <div id="ui-layer">
-        <div class="panel">
-            <h1>LogiNode v1.0</h1>
-            <div class="stats">Crédits: <span id="moneyDisplay">150</span> ¢</div>
-            
-            <div class="toolbar">
-                <button class="btn active" onclick="setBuildMode('cursor')">
-                    <span style="width:15px;height:15px;background:#ccc;border-radius:50%;display:inline-block;"></span>
-                    Curseur (Inspecter)
-                </button>
-                <button class="btn" onclick="setBuildMode('miner')">
-                    <span style="width:15px;height:15px;background:#e74c3c;display:inline-block;"></span>
-                    Extracteur (-50¢)
-                </button>
-                <button class="btn" onclick="setBuildMode('belt')">
-                    <span style="width:15px;height:15px;background:#95a5a6;display:inline-block;position:relative;">
-                        <span style="position:absolute;top:2px;left:5px;font-size:10px;color:#000;">↑</span>
-                    </span>
-                    Convoyeur (-10¢) <span class="shortcut">R</span>
-                </button>
-                <button class="btn" onclick="setBuildMode('delete')">
-                    <span style="width:15px;height:15px;background:repeating-linear-gradient(45deg, #000, #000 2px, #f39c12 2px, #f39c12 4px);display:inline-block;"></span>
-                    Démolir (Clic droit)
-                </button>
-            </div>
+        <div class="panel-container">
+            <div class="panel">
+                <h1>LogiNode v2.0</h1>
+                <div class="stats">Crédits: <span id="moneyDisplay">300</span> ¢</div>
+                
+                <div class="toolbar">
+                    <button class="btn active" onclick="setBuildMode('cursor')">
+                        <span style="width:15px;height:15px;background:#ccc;border-radius:50%;display:inline-block;"></span>
+                        Inspecter
+                        <span class="shortcut">1</span>
+                    </button>
+                    <button class="btn" onclick="setBuildMode('pan')">
+                        <span style="width:15px;height:15px;background:none;border:2px solid #fff;border-radius:50%;display:inline-block;position:relative;"><span style="position:absolute;top:-4px;left:2px;">+</span></span>
+                        Déplacer Carte
+                        <span class="shortcut">M</span>
+                    </button>
+                    <hr style="border-color:#444; width:100%; margin: 5px 0;">
+                    <button class="btn" onclick="setBuildMode('miner')">
+                        <span style="width:15px;height:15px;background:#e74c3c;display:inline-block;"></span>
+                        Extracteur (-50¢)
+                        <span class="shortcut">2</span>
+                    </button>
+                    <button class="btn" onclick="setBuildMode('belt')">
+                        <span style="width:15px;height:15px;background:#95a5a6;display:inline-block;position:relative;">
+                            <span style="position:absolute;top:2px;left:5px;font-size:10px;color:#000;">↑</span>
+                        </span>
+                        Convoyeur (-10¢)
+                        <span class="shortcut">3</span>
+                    </button>
+                    <button class="btn" onclick="setBuildMode('upgrader')">
+                        <span style="width:15px;height:15px;background:#e67e22;display:inline-block;border-radius:3px;"></span>
+                        Traitement (-100¢)
+                        <span class="shortcut">4</span>
+                    </button>
+                    <hr style="border-color:#444; width:100%; margin: 5px 0;">
+                    <button class="btn" onclick="setBuildMode('delete')">
+                        <span style="width:15px;height:15px;background:repeating-linear-gradient(45deg, #000, #000 2px, #f39c12 2px, #f39c12 4px);display:inline-block;"></span>
+                        Démolir (Clic droit)
+                        <span class="shortcut">X</span>
+                    </button>
+                </div>
 
-            <div class="tutorial">
-                <strong>Objectif:</strong> Acheminez les paquets bleus (Ressources) vers le Noyau Central (Jaune).<br><br>
-                1. Placez un extracteur sur un nœud bleu.<br>
-                2. Reliez-le au noyau avec des convoyeurs.<br>
-                3. Appuyez sur <strong>[R]</strong> pour pivoter les convoyeurs.<br>
-                <br>
-                🚨 <strong>Touche [ÉCHAP] pour cacher le jeu.</strong>
+                <div class="tutorial">
+                    <strong>Déplacement:</strong> ZQSD/Flèches, Clic-Molette, ou outil Déplacer.<br>
+                    <strong>Rotation:</strong> Touche [R] pour les convoyeurs/traitements.<br>
+                    <strong>Économie:</strong><br>
+                    - Brut (Bleu) = 15¢<br>
+                    - Traité (Vert) = 60¢<br><br>
+                    🚨 <strong>Touche [ÉCHAP] pour cacher l'écran.</strong>
+                </div>
             </div>
         </div>
         
         <div class="panel" style="height: fit-content;">
             <div style="font-size: 0.9rem; color: #888;">
-                Direction actuelle Convoyeur:<br>
+                Direction Bâtiment:<br>
                 <strong id="dirDisplay" style="color: #fff; font-size: 1.2rem;">HAUT (↑)</strong>
+            </div>
+            <div style="font-size: 0.75rem; color: #666; margin-top: 10px;" id="coordsDisplay">
+                X: 0, Y: 0
             </div>
         </div>
     </div>
@@ -179,12 +190,10 @@
     <canvas id="gameCanvas"></canvas>
 
     <script>
-        // --- CONSTANTES ET CONFIGURATION ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const TILE_SIZE = 40;
         
-        // Directions: 0=Haut, 1=Droite, 2=Bas, 3=Gauche
         const DIRS = [
             { x: 0, y: -1, symbol: '↑', name: 'HAUT' },
             { x: 1, y: 0, symbol: '→', name: 'DROITE' },
@@ -194,57 +203,50 @@
 
         // --- ETAT DU JEU ---
         const game = {
-            money: 150,
-            gridWidth: 0,
-            gridHeight: 0,
-            grid: [],    // Stocke les ressources et bâtiments
-            items: [],   // Stocke les ressources en mouvement
+            money: 300,
+            gridWidth: 100,  // Carte de 100x100 tuiles (géante!)
+            gridHeight: 100,
+            grid: [],
+            items: [],
             
-            // État de l'interface
-            buildMode: 'cursor', // cursor, miner, belt, delete
-            currentDir: 0,       // Direction pour les convoyeurs
-            mouseX: 0,
-            mouseY: 0,
+            buildMode: 'cursor',
+            currentDir: 0,
             
-            // Temps pour les animations
+            // Caméra et interaction
+            camera: { x: 0, y: 0 },
+            mouseX: 0, mouseY: 0,
+            worldX: 0, worldY: 0,
+            isDragging: false,
+            isMiddleDragging: false,
+            lastMouse: { x: 0, y: 0 },
+            keys: {}, // État des touches du clavier
+            
             tick: 0,
-            
-            // Noyau (Base)
-            core: { x: 0, y: 0 }
+            core: { x: 50, y: 50 } // Centre de la carte 100x100
         };
-
-        // --- CLASSES ---
 
         class Tile {
             constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.resource = null; // 'node'
-                this.building = null; // { type: 'miner'|'belt'|'core', dir: 0-3 }
+                this.x = x; this.y = y;
+                this.resource = null;
+                this.building = null;
             }
         }
 
         class Item {
             constructor(startX, startY) {
-                this.x = startX;
-                this.y = startY;
-                this.progress = 0; // De 0 à 1 vers la prochaine tuile
-                this.gridX = startX;
-                this.gridY = startY;
-                this.movingDir = -1; // Direction actuelle de mouvement
+                this.x = startX; this.y = startY;
+                this.progress = 0;
+                this.gridX = startX; this.gridY = startY;
+                this.movingDir = -1;
+                this.type = 'raw'; // 'raw' (bleu) ou 'processed' (vert)
             }
         }
-
-        // --- INITIALISATION ---
 
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            game.gridWidth = Math.ceil(canvas.width / TILE_SIZE);
-            game.gridHeight = Math.ceil(canvas.height / TILE_SIZE);
-            
-            // Centrer le noyau si c'est le début
-            if (game.core.x === 0 && game.core.y === 0) {
+            if (game.grid.length === 0) {
                 initGrid();
             }
         }
@@ -258,17 +260,18 @@
                 }
             }
 
-            // Placer le Noyau au centre
-            game.core.x = Math.floor(game.gridWidth / 2);
-            game.core.y = Math.floor(game.gridHeight / 2);
+            // Placer le Noyau
             game.grid[game.core.x][game.core.y].building = { type: 'core' };
 
-            // Générer des gisements aléatoires
+            // Centrer la caméra sur le noyau
+            game.camera.x = Math.floor(canvas.width / 2 - (game.core.x * TILE_SIZE + TILE_SIZE / 2));
+            game.camera.y = Math.floor(canvas.height / 2 - (game.core.y * TILE_SIZE + TILE_SIZE / 2));
+
+            // Générer des gisements (plus nombreux car grande carte)
             let nodesPlaced = 0;
-            while(nodesPlaced < 15) {
+            while(nodesPlaced < 80) {
                 let rx = Math.floor(Math.random() * game.gridWidth);
                 let ry = Math.floor(Math.random() * game.gridHeight);
-                // Ne pas placer sur le noyau ou trop près
                 let dist = Math.abs(rx - game.core.x) + Math.abs(ry - game.core.y);
                 if (dist > 3 && !game.grid[rx][ry].resource) {
                     game.grid[rx][ry].resource = 'node';
@@ -277,154 +280,188 @@
             }
         }
 
-        // --- LOGIQUE METIER (MISE A JOUR) ---
-
         function update() {
+            let bossScreen = document.getElementById('boss-screen');
+            if (bossScreen.style.display === 'block') return; // Pause si Boss Key activé
+
             game.tick++;
 
-            // 1. Les Extracteurs minent
-            if (game.tick % 60 === 0) { // Environ chaque seconde
+            // Mouvement Caméra via Clavier
+            const camSpeed = 10;
+            if (game.keys['ArrowUp'] || game.keys['z'] || game.keys['w']) game.camera.y += camSpeed;
+            if (game.keys['ArrowDown'] || game.keys['s']) game.camera.y -= camSpeed;
+            if (game.keys['ArrowLeft'] || game.keys['q'] || game.keys['a']) game.camera.x += camSpeed;
+            if (game.keys['ArrowRight'] || game.keys['d']) game.camera.x -= camSpeed;
+
+            // 1. Minage
+            if (game.tick % 60 === 0) {
                 for (let x = 0; x < game.gridWidth; x++) {
                     for (let y = 0; y < game.gridHeight; y++) {
                         let tile = game.grid[x][y];
                         if (tile.building && tile.building.type === 'miner' && tile.resource === 'node') {
-                            // Cherche si un item est déjà sur la case pour éviter l'empilement infini
                             let itemOnTile = game.items.find(i => Math.round(i.x) === x && Math.round(i.y) === y);
-                            if (!itemOnTile) {
-                                game.items.push(new Item(x, y));
-                            }
+                            if (!itemOnTile) game.items.push(new Item(x, y));
                         }
                     }
                 }
             }
 
-            // 2. Mouvement des items
+            // 2. Logique des items
             for (let i = game.items.length - 1; i >= 0; i--) {
                 let item = game.items[i];
                 let currentTile = game.grid[item.gridX] && game.grid[item.gridX][item.gridY];
 
                 if (!currentTile) continue;
 
-                // Si l'item est parfaitement centré sur la tuile
                 if (item.progress === 0) {
                     if (currentTile.building) {
-                        if (currentTile.building.type === 'core') {
-                            // Item livré !
-                            game.money += 15;
+                        let bType = currentTile.building.type;
+                        
+                        if (bType === 'core') {
+                            game.money += (item.type === 'raw' ? 15 : 60);
                             updateUI();
                             game.items.splice(i, 1);
                             continue;
-                        } else if (currentTile.building.type === 'belt') {
+                        } 
+                        else if (bType === 'belt') {
                             item.movingDir = currentTile.building.dir;
-                        } else if (currentTile.building.type === 'miner') {
-                             // L'extracteur pousse l'item vers le convoyeur adjacent s'il y en a un
+                        } 
+                        else if (bType === 'upgrader') {
+                            // Transformation du minerai
+                            if (item.type === 'raw') item.type = 'processed';
+                            item.movingDir = currentTile.building.dir;
+                        }
+                        else if (bType === 'miner') {
                              let pushed = false;
                              for(let d=0; d<4; d++) {
                                  let nx = item.gridX + DIRS[d].x;
                                  let ny = item.gridY + DIRS[d].y;
-                                 if(game.grid[nx] && game.grid[nx][ny] && game.grid[nx][ny].building && game.grid[nx][ny].building.type === 'belt') {
+                                 let adj = game.grid[nx] && game.grid[nx][ny];
+                                 if(adj && adj.building && (adj.building.type === 'belt' || adj.building.type === 'upgrader')) {
                                     item.movingDir = d;
                                     pushed = true;
                                     break;
                                  }
                              }
-                             if(!pushed) item.movingDir = -1; // Bloqué
+                             if(!pushed) item.movingDir = -1;
                         } else {
-                            item.movingDir = -1; // Autre bâtiment, bloqué
+                            item.movingDir = -1;
                         }
                     } else {
-                        item.movingDir = -1; // Pas de bâtiment, bloqué
+                        item.movingDir = -1;
                     }
                 }
 
-                // Déplacer l'item
+                // Déplacement physique
                 if (item.movingDir !== -1) {
-                    const speed = 0.05; // Vitesse de déplacement
+                    // Les items transformés sont légèrement plus lents (simulation de poids/complexité)
+                    const speed = item.type === 'raw' ? 0.05 : 0.04; 
                     item.progress += speed;
                     
-                    // Calcul de la position visuelle interpolée
                     item.x = item.gridX + DIRS[item.movingDir].x * item.progress;
                     item.y = item.gridY + DIRS[item.movingDir].y * item.progress;
 
-                    // A-t-il atteint la tuile suivante ?
                     if (item.progress >= 1) {
                         item.gridX += DIRS[item.movingDir].x;
                         item.gridY += DIRS[item.movingDir].y;
                         item.x = item.gridX;
                         item.y = item.gridY;
                         item.progress = 0;
-                        item.movingDir = -1; // Recalcul au prochain frame
+                        item.movingDir = -1;
                     }
                 }
             }
         }
-
-        // --- RENDU VISUEL ---
 
         function draw() {
             // Fond
             ctx.fillStyle = '#1e1e24';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dessiner la grille (lignes discrètes)
+            // Dessin de la grille infinie
+            let offsetX = game.camera.x % TILE_SIZE;
+            let offsetY = game.camera.y % TILE_SIZE;
+            
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
-            for (let x = 0; x <= canvas.width; x += TILE_SIZE) {
+            for (let x = offsetX; x <= canvas.width; x += TILE_SIZE) {
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
             }
-            for (let y = 0; y <= canvas.height; y += TILE_SIZE) {
+            for (let y = offsetY; y <= canvas.height; y += TILE_SIZE) {
                 ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
             }
 
-            // Dessiner les entités de la grille
-            for (let x = 0; x < game.gridWidth; x++) {
-                for (let y = 0; y < game.gridHeight; y++) {
+            ctx.save();
+            ctx.translate(game.camera.x, game.camera.y);
+
+            // Limites de la carte (pour montrer que ça ne va pas à l'infini)
+            ctx.strokeStyle = 'rgba(231, 76, 60, 0.3)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(0, 0, game.gridWidth * TILE_SIZE, game.gridHeight * TILE_SIZE);
+
+            // Culling (Ne dessiner que ce qui est visible à l'écran)
+            let startX = Math.max(0, Math.floor(-game.camera.x / TILE_SIZE));
+            let startY = Math.max(0, Math.floor(-game.camera.y / TILE_SIZE));
+            let endX = Math.min(game.gridWidth, startX + Math.ceil(canvas.width / TILE_SIZE) + 1);
+            let endY = Math.min(game.gridHeight, startY + Math.ceil(canvas.height / TILE_SIZE) + 1);
+
+            // Bâtiments et Ressources
+            for (let x = startX; x < endX; x++) {
+                for (let y = startY; y < endY; y++) {
                     let tile = game.grid[x][y];
                     let px = x * TILE_SIZE;
                     let py = y * TILE_SIZE;
 
-                    // Ressource (Nœud)
                     if (tile.resource === 'node') {
-                        ctx.fillStyle = '#2980b9'; // Bleu
+                        ctx.fillStyle = '#2980b9';
                         ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
-                        // Petits détails pour faire "gisement"
                         ctx.fillStyle = '#3498db';
                         ctx.fillRect(px + 8, py + 8, 10, 10);
                         ctx.fillRect(px + 20, py + 15, 8, 8);
                     }
 
-                    // Bâtiments
                     if (tile.building) {
                         if (tile.building.type === 'core') {
-                            ctx.fillStyle = '#f1c40f'; // Jaune
+                            ctx.fillStyle = '#f1c40f';
                             ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
                             ctx.fillStyle = '#000';
-                            ctx.font = 'bold 20px Arial';
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
+                            ctx.font = 'bold 16px Arial';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                             ctx.fillText('CORE', px + TILE_SIZE/2, py + TILE_SIZE/2);
                         } 
                         else if (tile.building.type === 'belt') {
-                            ctx.fillStyle = '#34495e'; // Gris foncé
+                            ctx.fillStyle = '#34495e';
                             ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             
-                            // Dessiner les flèches du convoyeur (animation)
                             ctx.fillStyle = 'rgba(255,255,255,0.3)';
                             ctx.save();
                             ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2);
-                            ctx.rotate(tile.building.dir * Math.PI / 2); // 0, 90, 180, 270 deg
-                            
-                            // Effet de mouvement de la bande
+                            ctx.rotate(tile.building.dir * Math.PI / 2);
                             let offset = (game.tick % 20) / 20 * 10;
                             ctx.font = '16px Arial';
                             ctx.fillText('↑', 0, -5 + offset);
                             ctx.fillText('↑', 0, 10 + offset);
+                            ctx.restore();
+                        }
+                        else if (tile.building.type === 'upgrader') {
+                            ctx.fillStyle = '#e67e22'; // Orange
+                            ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             
+                            // Animation du traitement
+                            ctx.fillStyle = '#d35400';
+                            let pulse = Math.abs(Math.sin(game.tick * 0.1)) * 5;
+                            ctx.fillRect(px + 10 - pulse/2, py + 10 - pulse/2, 20 + pulse, 20 + pulse);
+                            
+                            // Flèche de sortie
+                            ctx.fillStyle = '#fff';
+                            ctx.save();
+                            ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2);
+                            ctx.rotate(tile.building.dir * Math.PI / 2);
+                            ctx.fillText('↑', 0, 0);
                             ctx.restore();
                         }
                         else if (tile.building.type === 'miner') {
-                            ctx.fillStyle = '#e74c3c'; // Rouge
-                            // Forme octogonale/industrielle simple
+                            ctx.fillStyle = '#e74c3c';
                             ctx.beginPath();
                             ctx.moveTo(px + 10, py); ctx.lineTo(px + TILE_SIZE - 10, py);
                             ctx.lineTo(px + TILE_SIZE, py + 10); ctx.lineTo(px + TILE_SIZE, py + TILE_SIZE - 10);
@@ -432,7 +469,6 @@
                             ctx.lineTo(px, py + TILE_SIZE - 10); ctx.lineTo(px, py + 10);
                             ctx.fill();
 
-                            // Partie animée au centre
                             ctx.fillStyle = '#c0392b';
                             ctx.beginPath();
                             ctx.arc(px + TILE_SIZE/2, py + TILE_SIZE/2, 10 + Math.sin(game.tick * 0.1) * 2, 0, Math.PI * 2);
@@ -442,29 +478,33 @@
                 }
             }
 
-            // Dessiner les items
-            ctx.fillStyle = '#00d2ff'; // Cyan fluo pour bien les voir
+            // Items
             ctx.shadowBlur = 10;
-            ctx.shadowColor = '#00d2ff';
             for (let item of game.items) {
-                let px = item.x * TILE_SIZE + TILE_SIZE / 2;
-                let py = item.y * TILE_SIZE + TILE_SIZE / 2;
-                ctx.beginPath();
-                ctx.arc(px, py, 6, 0, Math.PI * 2);
-                ctx.fill();
+                // Ne dessiner que si dans la zone visible
+                if (item.x >= startX - 1 && item.x <= endX && item.y >= startY - 1 && item.y <= endY) {
+                    ctx.fillStyle = item.type === 'raw' ? '#00d2ff' : '#2ecc71'; // Bleu fluo ou Vert fluo
+                    ctx.shadowColor = ctx.fillStyle;
+                    
+                    let px = item.x * TILE_SIZE + TILE_SIZE / 2;
+                    let py = item.y * TILE_SIZE + TILE_SIZE / 2;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
-            ctx.shadowBlur = 0; // Reset
+            ctx.shadowBlur = 0;
 
-            // Dessiner le curseur fantôme (Prévisualisation)
-            let gx = Math.floor(game.mouseX / TILE_SIZE);
-            let gy = Math.floor(game.mouseY / TILE_SIZE);
+            // Curseur Fantôme (Seulement si la souris est sur la carte)
+            let gx = Math.floor(game.worldX / TILE_SIZE);
+            let gy = Math.floor(game.worldY / TILE_SIZE);
             
             if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight) {
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-                if (game.buildMode !== 'cursor' && game.buildMode !== 'delete') {
+                if (['belt', 'miner', 'upgrader'].includes(game.buildMode)) {
                     ctx.globalAlpha = 0.5;
                     let px = gx * TILE_SIZE;
                     let py = gy * TILE_SIZE;
@@ -473,11 +513,12 @@
                         ctx.fillStyle = '#34495e';
                         ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                         ctx.fillStyle = '#fff';
-                        ctx.save();
-                        ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2);
-                        ctx.rotate(game.currentDir * Math.PI / 2);
-                        ctx.fillText('↑', 0, 0);
-                        ctx.restore();
+                        ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(game.currentDir * Math.PI / 2); ctx.fillText('↑', 0, 0); ctx.restore();
+                    } else if (game.buildMode === 'upgrader') {
+                        ctx.fillStyle = '#e67e22';
+                        ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                        ctx.fillStyle = '#fff';
+                        ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(game.currentDir * Math.PI / 2); ctx.fillText('↑', 0, 0); ctx.restore();
                     } else if (game.buildMode === 'miner') {
                         ctx.fillStyle = '#e74c3c';
                         ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
@@ -485,9 +526,9 @@
                     ctx.globalAlpha = 1.0;
                 }
             }
-        }
 
-        // --- BOUCLE PRINCIPALE ---
+            ctx.restore();
+        }
 
         function gameLoop() {
             update();
@@ -495,91 +536,116 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- INTERACTIONS UI & SOURIS ---
+        // --- INTERACTIONS ---
 
         function updateUI() {
             document.getElementById('moneyDisplay').innerText = game.money;
             document.getElementById('dirDisplay').innerText = DIRS[game.currentDir].name + ' (' + DIRS[game.currentDir].symbol + ')';
+            
+            let gx = Math.floor(game.worldX / TILE_SIZE);
+            let gy = Math.floor(game.worldY / TILE_SIZE);
+            document.getElementById('coordsDisplay').innerText = `Coord: X:${gx}, Y:${gy}`;
         }
 
         function setBuildMode(mode) {
             game.buildMode = mode;
-            // Met à jour les boutons visuellement
             document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
-            // Hack simple pour retrouver le bon bouton
-            let index = ['cursor', 'miner', 'belt', 'delete'].indexOf(mode);
-            document.querySelectorAll('.btn')[index].classList.add('active');
+            let index = ['cursor', 'pan', 'miner', 'belt', 'upgrader', 'delete'].indexOf(mode);
+            if(index >= 0) document.querySelectorAll('.btn')[index].classList.add('active');
         }
 
-        // Gestion de la souris
-        canvas.addEventListener('mousemove', (e) => {
+        // Gestion Clavier
+        window.addEventListener('keydown', (e) => {
+            game.keys[e.key] = true;
+            
+            if (e.key === 'r' || e.key === 'R') {
+                game.currentDir = (game.currentDir + 1) % 4;
+                updateUI();
+            }
+            if (e.key === 'Escape') {
+                let bs = document.getElementById('boss-screen');
+                bs.style.display = (bs.style.display === 'block') ? 'none' : 'block';
+            }
+            
+            // Raccourcis
+            if(e.key === '1') setBuildMode('cursor');
+            if(e.key === 'm' || e.key === 'M') setBuildMode('pan');
+            if(e.key === '2') setBuildMode('miner');
+            if(e.key === '3') setBuildMode('belt');
+            if(e.key === '4') setBuildMode('upgrader');
+            if(e.key === 'x' || e.key === 'X') setBuildMode('delete');
+        });
+        
+        window.addEventListener('keyup', (e) => { game.keys[e.key] = false; });
+
+        // Gestion Souris
+        window.addEventListener('mousemove', (e) => {
+            if (game.isDragging || game.isMiddleDragging) {
+                game.camera.x += e.clientX - game.lastMouse.x;
+                game.camera.y += e.clientY - game.lastMouse.y;
+            }
+            game.lastMouse.x = e.clientX;
+            game.lastMouse.y = e.clientY;
+            
             game.mouseX = e.clientX;
             game.mouseY = e.clientY;
+            game.worldX = e.clientX - game.camera.x;
+            game.worldY = e.clientY - game.camera.y;
+            
+            updateUI();
         });
 
         canvas.addEventListener('mousedown', (e) => {
-            let gx = Math.floor(e.clientX / TILE_SIZE);
-            let gy = Math.floor(e.clientY / TILE_SIZE);
+            game.lastMouse.x = e.clientX;
+            game.lastMouse.y = e.clientY;
+            
+            if (e.button === 1) { // Molette
+                game.isMiddleDragging = true;
+                e.preventDefault();
+                return;
+            }
+
+            if (game.buildMode === 'pan') {
+                game.isDragging = true;
+                return;
+            }
+
+            let gx = Math.floor(game.worldX / TILE_SIZE);
+            let gy = Math.floor(game.worldY / TILE_SIZE);
             
             if (gx < 0 || gx >= game.gridWidth || gy < 0 || gy >= game.gridHeight) return;
 
             let tile = game.grid[gx][gy];
             let isRightClick = e.button === 2;
 
-            // Mode Démolition (ou Clic Droit)
             if (game.buildMode === 'delete' || isRightClick) {
-                if (tile.building && tile.building.type !== 'core') {
-                    tile.building = null;
-                }
+                if (tile.building && tile.building.type !== 'core') tile.building = null;
                 return;
             }
 
-            // Mode Construction
             if (game.buildMode === 'miner') {
                 if (game.money >= 50 && tile.resource === 'node' && !tile.building) {
-                    game.money -= 50;
-                    tile.building = { type: 'miner' };
+                    game.money -= 50; tile.building = { type: 'miner' };
                 }
-            } 
-            else if (game.buildMode === 'belt') {
+            } else if (game.buildMode === 'belt') {
                 if (game.money >= 10 && !tile.building) {
-                    game.money -= 10;
-                    tile.building = { type: 'belt', dir: game.currentDir };
+                    game.money -= 10; tile.building = { type: 'belt', dir: game.currentDir };
+                }
+            } else if (game.buildMode === 'upgrader') {
+                if (game.money >= 100 && !tile.building) {
+                    game.money -= 100; tile.building = { type: 'upgrader', dir: game.currentDir };
                 }
             }
-            
             updateUI();
         });
 
-        // Empêche le menu contextuel du clic droit sur le canvas
-        canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-        // Gestion du clavier (Rotation et Boss Key)
-        window.addEventListener('keydown', (e) => {
-            // Touche R pour pivoter
-            if (e.key === 'r' || e.key === 'R') {
-                game.currentDir = (game.currentDir + 1) % 4;
-                updateUI();
-            }
-            
-            // Touche Echap pour le Boss Key
-            if (e.key === 'Escape') {
-                let bossScreen = document.getElementById('boss-screen');
-                if (bossScreen.style.display === 'block') {
-                    bossScreen.style.display = 'none'; // Reprendre le jeu
-                } else {
-                    bossScreen.style.display = 'block'; // Cacher le jeu
-                }
-            }
-            
-            // Raccourcis numériques
-            if(e.key === '1') setBuildMode('cursor');
-            if(e.key === '2') setBuildMode('miner');
-            if(e.key === '3') setBuildMode('belt');
-            if(e.key === '4') setBuildMode('delete');
+        window.addEventListener('mouseup', (e) => {
+            if (e.button === 1) game.isMiddleDragging = false;
+            game.isDragging = false;
         });
 
-        // Générer de fausses données pour le Boss Key
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
         function generateFakeData() {
             let tbody = document.getElementById('fake-table-body');
             let html = '';
@@ -594,7 +660,6 @@
             tbody.innerHTML = html;
         }
 
-        // Lancement
         window.addEventListener('resize', resize);
         generateFakeData();
         resize();
