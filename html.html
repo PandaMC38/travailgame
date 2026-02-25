@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiNode - Dashboard System V8</title>
+    <title>LogiNode - Dashboard System V9</title>
     <style>
         /* Styles de base - Thème sombre "IDE / Dashboard" */
         body {
@@ -89,14 +89,18 @@
             opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
         }
 
-        /* Modal Upgrades */
-        #upgrade-modal {
+        /* Modals (Upgrades & Sorter) */
+        .modal {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(26, 26, 32, 0.98); border: 2px solid #4db8ff; border-radius: 8px;
             padding: 25px; z-index: 50; width: 450px; box-shadow: 0 0 40px rgba(0,0,0,0.9);
             pointer-events: auto;
         }
-        #upgrade-modal h2 { margin-top: 0; color: #4db8ff; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .modal h2 { margin-top: 0; color: #4db8ff; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .close-modal { position: absolute; top: 10px; right: 15px; cursor: pointer; color: #aaa; font-size: 1.5rem; }
+        .close-modal:hover { color: #fff; }
+
+        /* Upgrade Modal Specifics */
         .upg-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 6px; border: 1px solid #333;}
         .upg-info { flex-grow: 1; }
         .upg-title { font-weight: bold; font-size: 1rem; color: #fff; margin-bottom: 4px; }
@@ -105,8 +109,18 @@
         .upg-btn { background: #4db8ff; color: #000; padding: 8px 15px; border:none; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; min-width: 90px; text-align: center; }
         .upg-btn:hover { background: #fff; }
         .upg-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
-        .close-modal { position: absolute; top: 10px; right: 15px; cursor: pointer; color: #aaa; font-size: 1.5rem; }
-        .close-modal:hover { color: #fff; }
+
+        /* Sorter Modal Specifics */
+        #sorter-modal { width: 380px; border-color: #3498db; }
+        #sorter-modal h2 { color: #3498db; }
+        .sorter-header { display: flex; justify-content: space-between; padding: 0 10px 10px 10px; font-size: 0.8rem; color: #888; font-weight: bold;}
+        .sorter-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; border: 1px solid #333;}
+        .sorter-res { font-size: 0.85rem; color: #ddd; padding-left: 10px; flex-grow: 1;}
+        .sorter-btns { display: flex; gap: 5px; }
+        .s-btn { width: 32px; height: 32px; background: #222; border: 1px solid #555; color: #aaa; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight:bold; }
+        .s-btn:hover { background: #444; color: #fff; }
+        .s-btn.active { background: #3498db; color: #fff; border-color: #fff; box-shadow: 0 0 8px rgba(52, 152, 219, 0.6);}
+
     </style>
 </head>
 <body>
@@ -126,7 +140,7 @@
     </div>
 
     <!-- Modal Upgrades -->
-    <div id="upgrade-modal">
+    <div id="upgrade-modal" class="modal">
         <span class="close-modal" onclick="toggleUpgrades()">&times;</span>
         <h2>Centre de Recherche</h2>
         
@@ -158,12 +172,33 @@
         </div>
     </div>
 
+    <!-- Modal Config Trieur -->
+    <div id="sorter-modal" class="modal">
+        <span class="close-modal" onclick="document.getElementById('sorter-modal').style.display='none'">&times;</span>
+        <h2>Filtres du Trieur</h2>
+        <p style="font-size: 0.75rem; color: #aaa; text-align: center; margin-top: -5px; margin-bottom: 15px;">
+            Choisissez la direction de sortie pour chaque type de donnée.<br>
+            Les ressources non-assignées resteront bloquées.
+        </p>
+        <div class="sorter-header">
+            <div>Type de Ressource</div>
+            <div style="display:flex; gap:5px; text-align:center;">
+                <span style="width:32px" title="Gauche">G</span>
+                <span style="width:32px" title="Face">F</span>
+                <span style="width:32px" title="Droite">D</span>
+            </div>
+        </div>
+        <div id="sorter-filters-container">
+            <!-- Rempli en JS -->
+        </div>
+    </div>
+
     <!-- Interface du jeu -->
     <div id="ui-layer">
         <div class="panel-container">
             <div class="panel">
                 <div class="header-flex">
-                    <h1>LogiNode v8.0</h1>
+                    <h1>LogiNode v9.0</h1>
                     <div>
                         <button class="sys-btn" onclick="toggleUpgrades()" style="margin-right: 5px; background: #2980b9; color:#fff; border-color:#3498db;">UPGRADES</button>
                         <button class="sys-btn danger" onclick="resetGame()" title="Effacer la sauvegarde">RESET</button>
@@ -250,9 +285,9 @@
                 </div>
 
                 <div class="tutorial">
-                    <strong>Nouveautés V8 :</strong><br>
-                    - 🚀 <strong>Upgrades:</strong> Bouton en haut. Achetez des améliorations permanentes.<br>
-                    - 🧠 <strong>Trieur (Sorter):</strong> Filtre les ressources selon sa direction. (Gauche: Bleu, Face: Orange, Droite: Autres).<br>
+                    <strong>Trieur Intelligent :</strong><br>
+                    - Sélectionnez l'outil <strong>Inspecter (1)</strong>.<br>
+                    - Cliquez sur un <strong>Trieur</strong> (S) déjà construit pour configurer ses filtres.<br>
                     <br>🚨 <strong>Boss Key : [ÉCHAP]</strong>
                 </div>
             </div>
@@ -291,14 +326,9 @@
             deliveries: [], 
             particles: [],
             
-            // Arbre de compétences (V8)
-            upgrades: {
-                miner: 0,  // Max 5
-                belt: 0,   // Max 5
-                value: 0   // Max 5
-            },
+            upgrades: { miner: 0, belt: 0, value: 0 },
+            selectedSorter: null, // Mémorise le trieur en cours de configuration
             
-            // Progression et Missions
             missionIndex: 0,
             missionProgress: 0,
             missions: [
@@ -311,7 +341,6 @@
             
             buildMode: 'cursor',
             currentDir: 0,
-            
             camera: { x: 0, y: 0 },
             zoom: 1.0,
             mouseX: 0, mouseY: 0,
@@ -350,7 +379,7 @@
             }
         }
 
-        // --- GESTION DES UPGRADES (V8) ---
+        // --- GESTION DES UPGRADES ---
         function getUpgradeCost(type) {
             let lvl = game.upgrades[type];
             if(lvl >= 5) return Infinity;
@@ -370,15 +399,9 @@
                 let lvl = game.upgrades[type];
                 let cost = getUpgradeCost(type);
                 document.getElementById(`lvl-${type}`).innerText = `Niveau: ${lvl}/5`;
-                
                 let btn = document.getElementById(`btn-upg-${type}`);
-                if (lvl >= 5) {
-                    btn.innerText = "MAX";
-                    btn.disabled = true;
-                } else {
-                    btn.innerText = cost + " ¢";
-                    btn.disabled = (game.money < cost);
-                }
+                if (lvl >= 5) { btn.innerText = "MAX"; btn.disabled = true; } 
+                else { btn.innerText = cost + " ¢"; btn.disabled = (game.money < cost); }
             });
         }
 
@@ -393,15 +416,83 @@
             }
         }
 
+        // --- GESTION DES FILTRES DU TRIEUR (V9) ---
+        const RESOURCES = [
+            { id: 'raw_blue', name: 'Bleu (Donnée)', color: '#00d2ff' },
+            { id: 'proc_blue', name: 'Vert (Traité)', color: '#2ecc71' },
+            { id: 'raw_orange', name: 'Orange (Logique)', color: '#ff9f43' },
+            { id: 'proc_orange', name: 'Jaune (Traité)', color: '#feca57' },
+            { id: 'advanced_purple', name: 'Violet (Composant)', color: '#9b59b6' },
+            { id: 'raw_pink', name: 'Rose (Quantique)', color: '#fd79a8' },
+            { id: 'omega', name: 'Blanc (Omega)', color: '#ffffff' }
+        ];
+
+        function openSorterConfig(x, y) {
+            game.selectedSorter = {x, y};
+            let b = game.grid[x][y].building;
+            
+            // Initialisation par défaut si c'est un ancien trieur ou un nouveau
+            if(!b.filters) {
+                b.filters = {
+                    left: ['raw_blue', 'proc_blue'],
+                    straight: ['raw_orange', 'proc_orange'],
+                    right: ['raw_pink', 'advanced_purple', 'omega']
+                };
+            }
+            updateSorterUI();
+            document.getElementById('sorter-modal').style.display = 'block';
+        }
+
+        function updateSorterUI() {
+            if(!game.selectedSorter) return;
+            let b = game.grid[game.selectedSorter.x][game.selectedSorter.y].building;
+            let container = document.getElementById('sorter-filters-container');
+            let html = '';
+
+            RESOURCES.forEach(res => {
+                let isLeft = b.filters.left.includes(res.id) ? 'active' : '';
+                let isStraight = b.filters.straight.includes(res.id) ? 'active' : '';
+                let isRight = b.filters.right.includes(res.id) ? 'active' : '';
+
+                html += `<div class="sorter-row">
+                    <div class="sorter-res" style="border-left: 4px solid ${res.color};">${res.name}</div>
+                    <div class="sorter-btns">
+                        <button class="s-btn ${isLeft}" onclick="setSorterFilter('${res.id}', 'left')">←</button>
+                        <button class="s-btn ${isStraight}" onclick="setSorterFilter('${res.id}', 'straight')">↑</button>
+                        <button class="s-btn ${isRight}" onclick="setSorterFilter('${res.id}', 'right')">→</button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function setSorterFilter(resId, dir) {
+            if(!game.selectedSorter) return;
+            let b = game.grid[game.selectedSorter.x][game.selectedSorter.y].building;
+            
+            // Vérifie si la direction était déjà assignée pour ce bouton (système de toggle)
+            let wasInDir = b.filters[dir].includes(resId);
+
+            // Retire la ressource de toutes les directions
+            b.filters.left = b.filters.left.filter(r => r !== resId);
+            b.filters.straight = b.filters.straight.filter(r => r !== resId);
+            b.filters.right = b.filters.right.filter(r => r !== resId);
+
+            // Si elle n'était pas dans cette direction, on l'ajoute. Sinon, elle reste désassignée.
+            if(!wasInDir) {
+                b.filters[dir].push(resId);
+            }
+            
+            updateSorterUI();
+            saveGame(); // Sauvegarde automatique du filtre
+        }
+
         // --- SYSTEME DE SAUVEGARDE ---
         function saveGame() {
             let saveData = {
-                money: game.money,
-                missionIndex: game.missionIndex,
-                missionProgress: game.missionProgress,
-                zoom: game.zoom,
-                upgrades: game.upgrades,
-                gridData: []
+                money: game.money, missionIndex: game.missionIndex,
+                missionProgress: game.missionProgress, zoom: game.zoom,
+                upgrades: game.upgrades, gridData: []
             };
             for(let x=0; x<game.gridWidth; x++) {
                 for(let y=0; y<game.gridHeight; y++) {
@@ -411,13 +502,12 @@
                     }
                 }
             }
-            localStorage.setItem('loginode_save_v8', JSON.stringify(saveData));
-            showNotification("Sauvegarde Automatique effectuée");
+            localStorage.setItem('loginode_save_v9', JSON.stringify(saveData));
         }
 
         function loadGame() {
-            let saved = localStorage.getItem('loginode_save_v8');
-            // Migration depuis v7 ou v6
+            let saved = localStorage.getItem('loginode_save_v9');
+            if(!saved) saved = localStorage.getItem('loginode_save_v8'); 
             if(!saved) saved = localStorage.getItem('loginode_save_v7'); 
             if(!saved) saved = localStorage.getItem('loginode_save_v6'); 
             
@@ -455,6 +545,7 @@
 
         function resetGame() {
             if(confirm("Êtes-vous sûr de vouloir effacer votre sauvegarde et tout recommencer ?")) {
+                localStorage.removeItem('loginode_save_v9');
                 localStorage.removeItem('loginode_save_v8');
                 localStorage.removeItem('loginode_save_v7');
                 localStorage.removeItem('loginode_save_v6');
@@ -538,6 +629,15 @@
                 if (game.buildMode === 'integrator') bData.inventory = { advanced_purple: 0, raw_pink: 0 };
                 if (game.buildMode === 'splitter') bData.toggle = false;
                 
+                // On attache des filtres par défaut au nouveau trieur
+                if (game.buildMode === 'sorter') {
+                    bData.filters = {
+                        left: ['raw_blue', 'proc_blue'],
+                        straight: ['raw_orange', 'proc_orange'],
+                        right: ['raw_pink', 'advanced_purple', 'omega']
+                    };
+                }
+                
                 tile.building = bData;
                 updateUI();
                 if(document.getElementById('upgrade-modal').style.display === 'block') updateUpgradeUI();
@@ -557,7 +657,7 @@
             if (game.keys['ArrowLeft'] || game.keys['q'] || game.keys['a']) game.camera.x += camSpeed;
             if (game.keys['ArrowRight'] || game.keys['d']) game.camera.x -= camSpeed;
 
-            // 1. Minage (Affecté par l'upgrade Miner)
+            // 1. Minage 
             let minerInterval = Math.max(10, 60 - (game.upgrades.miner * 10)); 
             if (game.tick % minerInterval === 0) {
                 for (let x = 0; x < game.gridWidth; x++) {
@@ -595,7 +695,6 @@
                         
                         if (b.type === 'core') {
                             const baseValues = { 'raw_blue': 15, 'proc_blue': 40, 'raw_orange': 20, 'proc_orange': 50, 'advanced_purple': 200, 'raw_pink': 100, 'omega': 1000 };
-                            // Bonus de valeur lié à l'upgrade (+50% par niveau)
                             let val = Math.floor((baseValues[item.type] || 0) * (1 + (game.upgrades.value * 0.5)));
                             
                             game.money += val;
@@ -656,14 +755,24 @@
                             b.toggle = !b.toggle;
                         }
                         else if (b.type === 'sorter') {
-                            // TRIEUR INTELLIGENT (Nouveau V8)
                             let dirLeft = (b.dir + 3) % 4;
                             let dirRight = (b.dir + 1) % 4;
                             let dirStraight = b.dir;
                             
-                            if (item.type.includes('blue')) item.movingDir = dirLeft;
-                            else if (item.type.includes('orange')) item.movingDir = dirStraight;
-                            else item.movingDir = dirRight; // Pink, Purple, Omega
+                            // Si c'est une ancienne sauvegarde sans filtre, on l'initialise
+                            if (!b.filters) {
+                                b.filters = {
+                                    left: ['raw_blue', 'proc_blue'],
+                                    straight: ['raw_orange', 'proc_orange'],
+                                    right: ['raw_pink', 'advanced_purple', 'omega']
+                                };
+                            }
+
+                            // Application des filtres
+                            if (b.filters.left.includes(item.type)) item.movingDir = dirLeft;
+                            else if (b.filters.straight.includes(item.type)) item.movingDir = dirStraight;
+                            else if (b.filters.right.includes(item.type)) item.movingDir = dirRight;
+                            else item.movingDir = -1; // Objet bloqué s'il n'est pas filtré !
                         }
                         else if (b.type === 'upgrader') {
                             if (item.type === 'raw_blue') item.type = 'proc_blue';
@@ -719,7 +828,6 @@
 
                 if (item.movingDir !== -1) {
                     const baseSpeeds = { 'raw_blue': 0.06, 'proc_blue': 0.05, 'raw_orange': 0.06, 'proc_orange': 0.05, 'advanced_purple': 0.04, 'raw_pink': 0.04, 'omega': 0.03 };
-                    // Bonus de vitesse de convoyeur (+0.015 par niveau)
                     let speedMod = game.upgrades.belt * 0.015;
                     item.progress += (baseSpeeds[item.type] || 0.05) + speedMod;
                     
@@ -823,10 +931,11 @@
                             ctx.fillStyle = '#3498db'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             ctx.fillStyle = '#2980b9'; ctx.fillRect(px + 8, py + 8, TILE_SIZE - 16, TILE_SIZE - 16);
                             ctx.fillStyle = '#fff'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
-                            ctx.font = '10px Arial'; 
-                            ctx.fillStyle = '#2ecc71'; ctx.fillText('←', -10, 0); // Blue left
-                            ctx.fillStyle = '#f39c12'; ctx.fillText('↑', 0, -10); // Orange straight
-                            ctx.fillStyle = '#9b59b6'; ctx.fillText('→', 10, 0);  // Pink/Purple right
+                            
+                            // Affichage visuel qui montre que c'est un Trieur
+                            ctx.font = '14px Arial';
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('⚙', 0, 0); 
                             ctx.restore();
                         }
                         else if (b.type === 'upgrader') {
@@ -900,7 +1009,7 @@
                     else if (game.buildMode === 'trash') { ctx.fillStyle = '#c0392b'; ctx.fillRect(-16, -16, 32, 32); }
                     else if (game.buildMode === 'upgrader') { ctx.fillStyle = '#e67e22'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('↑', 0, 0); }
                     else if (game.buildMode === 'splitter') { ctx.fillStyle = '#1abc9c'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('Y', 0, 0); }
-                    else if (game.buildMode === 'sorter') { ctx.fillStyle = '#3498db'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('S', 0, 0); }
+                    else if (game.buildMode === 'sorter') { ctx.fillStyle = '#3498db'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('⚙', 0, 0); }
                     else if (game.buildMode === 'assembler') { ctx.fillStyle = '#8e44ad'; ctx.fillRect(-18, -18, 36, 36); }
                     else if (game.buildMode === 'integrator') { ctx.fillStyle = '#ecf0f1'; ctx.fillRect(-18, -18, 36, 36); }
                     else if (game.buildMode === 'miner') { ctx.fillStyle = '#e74c3c'; ctx.fillRect(-16, -16, 32, 32); }
@@ -1003,10 +1112,12 @@
             game.keys[e.key.toLowerCase()] = true; game.keys[e.key] = true; 
             if (e.key.toLowerCase() === 'r') { game.currentDir = (game.currentDir + 1) % 4; updateUI(); }
             if (e.key === 'Escape') {
-                let mod = document.getElementById('upgrade-modal');
-                if (mod.style.display === 'block') {
-                    mod.style.display = 'none';
-                } else {
+                let upgMod = document.getElementById('upgrade-modal');
+                let sortMod = document.getElementById('sorter-modal');
+                
+                if (upgMod.style.display === 'block') { upgMod.style.display = 'none'; }
+                else if (sortMod.style.display === 'block') { sortMod.style.display = 'none'; }
+                else {
                     let bs = document.getElementById('boss-screen');
                     if(bs.style.display !== 'block') {
                         let now = new Date();
@@ -1049,13 +1160,26 @@
         });
 
         canvas.addEventListener('mousedown', (e) => {
-            // Empêche la construction si on clique dans la modal d'upgrades
-            if (e.target.closest('#upgrade-modal')) return;
+            // Empêche les interactions avec le jeu si on clique sur un menu
+            if (e.target.closest('.modal')) return;
             
             game.lastMouse.x = e.clientX; game.lastMouse.y = e.clientY; game.paintButton = e.button; 
             if (e.button === 1) e.preventDefault(); 
+            
+            let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
+            
+            // Interaction avec le Trieur (Mode Inspecteur)
+            if (game.buildMode === 'cursor' && e.button === 0) {
+                if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight) {
+                    let tile = game.grid[gx][gy];
+                    if (tile.building && tile.building.type === 'sorter') {
+                        openSorterConfig(gx, gy);
+                        return; // Stoppe ici pour ne pas dessiner
+                    }
+                }
+            }
+
             if (game.buildMode !== 'pan' && e.button !== 1) {
-                let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
                 tryBuild(gx, gy, e.button === 2);
             }
         });
@@ -1063,6 +1187,8 @@
         canvas.addEventListener('wheel', (e) => {
             if (document.getElementById('boss-screen').style.display === 'block') return;
             if (document.getElementById('upgrade-modal').style.display === 'block') return;
+            if (document.getElementById('sorter-modal').style.display === 'block') return;
+            
             e.preventDefault(); 
             
             let wx = (e.clientX - game.camera.x) / game.zoom;
