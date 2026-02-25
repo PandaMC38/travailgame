@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiNode - Dashboard System V9</title>
+    <title>LogiNode - Dashboard System V10</title>
     <style>
         /* Styles de base - Thème sombre "IDE / Dashboard" */
         body {
@@ -19,7 +19,7 @@
             padding: 15px; box-sizing: border-box; z-index: 10;
         }
 
-        .panel-container { display: flex; flex-direction: column; gap: 15px; pointer-events: none; width: 320px; }
+        .panel-container { display: flex; flex-direction: column; gap: 15px; pointer-events: none; width: 330px; }
 
         .panel {
             background: rgba(26, 26, 32, 0.95); padding: 15px;
@@ -39,12 +39,16 @@
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;
         }
         .stat-box {
-            background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; border: 1px solid #333;
+            background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; border: 1px solid #333;
         }
-        .stat-label { font-size: 0.7rem; color: #888; text-transform: uppercase; }
-        .stat-value { font-size: 1.2rem; font-weight: bold; color: #ffeb3b; }
+        .stat-label { font-size: 0.65rem; color: #888; text-transform: uppercase; }
+        .stat-value { font-size: 1.1rem; font-weight: bold; color: #ffeb3b; }
         .stat-value.cyan { color: #00d2ff; }
+        .stat-value.power-ok { color: #2ecc71; }
+        .stat-value.power-low { color: #e74c3c; animation: blink 1s infinite; }
         
+        @keyframes blink { 50% { opacity: 0.5; } }
+
         /* Mission Box */
         .mission-box {
             grid-column: span 2; 
@@ -100,7 +104,6 @@
         .close-modal { position: absolute; top: 10px; right: 15px; cursor: pointer; color: #aaa; font-size: 1.5rem; }
         .close-modal:hover { color: #fff; }
 
-        /* Upgrade Modal Specifics */
         .upg-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 6px; border: 1px solid #333;}
         .upg-info { flex-grow: 1; }
         .upg-title { font-weight: bold; font-size: 1rem; color: #fff; margin-bottom: 4px; }
@@ -127,7 +130,6 @@
 
     <div id="notification">Jeu Sauvegardé</div>
 
-    <!-- Faux écran de travail (Boss Key) -->
     <div id="boss-screen">
         <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Monitoring des Flux Serveurs - Cluster Alpha</h2>
         <div style="margin-bottom: 20px; font-size: 14px; color: #7f8c8d;">Last Sync: <span id="fake-time"></span> | User: Admin</div>
@@ -139,7 +141,7 @@
         </table>
     </div>
 
-    <!-- Modal Upgrades -->
+    <!-- Modals -->
     <div id="upgrade-modal" class="modal">
         <span class="close-modal" onclick="toggleUpgrades()">&times;</span>
         <h2>Centre de Recherche</h2>
@@ -172,7 +174,6 @@
         </div>
     </div>
 
-    <!-- Modal Config Trieur -->
     <div id="sorter-modal" class="modal">
         <span class="close-modal" onclick="document.getElementById('sorter-modal').style.display='none'">&times;</span>
         <h2>Filtres du Trieur</h2>
@@ -188,9 +189,7 @@
                 <span style="width:32px" title="Droite">D</span>
             </div>
         </div>
-        <div id="sorter-filters-container">
-            <!-- Rempli en JS -->
-        </div>
+        <div id="sorter-filters-container"></div>
     </div>
 
     <!-- Interface du jeu -->
@@ -198,7 +197,7 @@
         <div class="panel-container">
             <div class="panel">
                 <div class="header-flex">
-                    <h1>LogiNode v9.0</h1>
+                    <h1>LogiNode v10.0</h1>
                     <div>
                         <button class="sys-btn" onclick="toggleUpgrades()" style="margin-right: 5px; background: #2980b9; color:#fff; border-color:#3498db;">UPGRADES</button>
                         <button class="sys-btn danger" onclick="resetGame()" title="Effacer la sauvegarde">RESET</button>
@@ -225,9 +224,13 @@
                         <div class="stat-label">Flux / Min</div>
                         <div class="stat-value cyan" id="ipmDisplay">0</div>
                     </div>
+                    <div class="stat-box" style="grid-column: span 2;">
+                        <div class="stat-label">Énergie (Prod / Cons)</div>
+                        <div class="stat-value power-ok" id="powerDisplay">50 / 0 W</div>
+                    </div>
                 </div>
                 
-                <div class="toolbar">
+                <div class="toolbar" id="toolbar-main">
                     <button class="btn active" onclick="setBuildMode('cursor')">
                         <span style="width:12px;height:12px;background:#ccc;border-radius:50%;display:inline-block;"></span>
                         Inspecter <span class="shortcut">1</span>
@@ -241,7 +244,7 @@
                     
                     <button class="btn" onclick="setBuildMode('miner')" id="btn-miner">
                         <span style="width:12px;height:12px;background:#e74c3c;display:inline-block;"></span>
-                        Extracteur <span style="color:#aaa;font-size:0.7rem;">(50¢)</span> <span class="shortcut">2</span>
+                        Extracteur <span style="color:#aaa;font-size:0.7rem;">(50¢ / 10W)</span> <span class="shortcut">2</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('belt')" id="btn-belt">
                         <span style="width:12px;height:12px;background:#95a5a6;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">↑</span>
@@ -257,27 +260,38 @@
                     </button>
                     <button class="btn" onclick="setBuildMode('sorter')" id="btn-sorter" style="display:none;">
                         <span style="width:12px;height:12px;background:#3498db;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;">S</span>
-                        Trieur <span style="color:#aaa;font-size:0.7rem;">(200¢)</span> <span class="shortcut">6</span>
+                        Trieur <span style="color:#aaa;font-size:0.7rem;">(200¢ / 5W)</span> <span class="shortcut">6</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('upgrader')" id="btn-upgrader" style="display:none;">
                         <span style="width:12px;height:12px;background:#e67e22;display:inline-block;"></span>
-                        Traitement <span style="color:#aaa;font-size:0.7rem;">(100¢)</span> <span class="shortcut">7</span>
+                        Traitement <span style="color:#aaa;font-size:0.7rem;">(100¢ / 15W)</span> <span class="shortcut">7</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('assembler')" id="btn-assembler" style="display:none;">
                         <span style="width:12px;height:12px;background:#8e44ad;display:inline-block;"></span>
-                        Assembleur <span style="color:#aaa;font-size:0.7rem;">(300¢)</span> <span class="shortcut">8</span>
+                        Assembleur <span style="color:#aaa;font-size:0.7rem;">(300¢ / 30W)</span> <span class="shortcut">8</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('integrator')" id="btn-integrator" style="display:none;">
                         <span style="width:12px;height:12px;background:#ecf0f1;display:inline-block;border:1px solid #333;"></span>
-                        Intégrateur <span style="color:#aaa;font-size:0.7rem;">(500¢)</span> <span class="shortcut">9</span>
+                        Intégrateur <span style="color:#aaa;font-size:0.7rem;">(500¢ / 50W)</span> <span class="shortcut">9</span>
                     </button>
+
+                    <hr id="hr-security" style="border-color:#333; width:100%; margin: 2px 0; display:none;">
+                    
+                    <button class="btn" onclick="setBuildMode('generator')" id="btn-generator" style="display:none; border-color:#f1c40f;">
+                        <span style="width:12px;height:12px;background:#f1c40f;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">⚡</span>
+                        Générateur <span style="color:#aaa;font-size:0.7rem;">(200¢ / +100W)</span> <span class="shortcut">G</span>
+                    </button>
+                    <button class="btn" onclick="setBuildMode('firewall')" id="btn-firewall" style="display:none; border-color:#e74c3c;">
+                        <span style="width:12px;height:12px;background:#c0392b;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;">♜</span>
+                        Firewall <span style="color:#aaa;font-size:0.7rem;">(300¢ / 20W)</span> <span class="shortcut">F</span>
+                    </button>
+                    
+                    <hr style="border-color:#333; width:100%; margin: 2px 0;">
+
                     <button class="btn" onclick="setBuildMode('trash')" id="btn-trash" style="display:none;">
                         <span style="width:12px;height:12px;background:#c0392b;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;">🗑</span>
                         /dev/null <span style="color:#aaa;font-size:0.7rem;">(20¢)</span> <span class="shortcut">0</span>
                     </button>
-                    
-                    <hr style="border-color:#333; width:100%; margin: 2px 0;">
-                    
                     <button class="btn" onclick="setBuildMode('delete')">
                         <span style="width:12px;height:12px;background:repeating-linear-gradient(45deg, #000, #000 2px, #e74c3c 2px, #e74c3c 4px);display:inline-block;"></span>
                         Démolir (Clic Droit) <span class="shortcut">X</span>
@@ -285,10 +299,9 @@
                 </div>
 
                 <div class="tutorial">
-                    <strong>Trieur Intelligent :</strong><br>
-                    - Sélectionnez l'outil <strong>Inspecter (1)</strong>.<br>
-                    - Cliquez sur un <strong>Trieur</strong> (S) déjà construit pour configurer ses filtres.<br>
-                    <br>🚨 <strong>Boss Key : [ÉCHAP]</strong>
+                    <strong>Alerte Sécurité (Phase 3+) :</strong><br>
+                    - ⚡ <strong>Énergie:</strong> Vos usines ont besoin de Watts. Construisez des Générateurs.<br>
+                    - 👾 <strong>Virus:</strong> Des menaces tentent de détruire votre usine. Défendez-la avec des Firewalls (♜).<br>
                 </div>
             </div>
         </div>
@@ -316,59 +329,46 @@
             { x: -1, y: 0, symbol: '←', name: 'GAUCHE' }
         ];
 
+        // Consommation électrique des bâtiments
+        const POWER_USAGE = {
+            'miner': 10, 'upgrader': 15, 'assembler': 30, 'integrator': 50, 'sorter': 5, 'firewall': 20
+        };
+
         // --- ETAT DU JEU ---
         const game = {
             money: 600,
-            gridWidth: 100,
-            gridHeight: 100,
-            grid: [],
-            items: [],
-            deliveries: [], 
-            particles: [],
+            gridWidth: 100, gridHeight: 100,
+            grid: [], items: [], deliveries: [], particles: [],
+            enemies: [], lasers: [],
             
+            power: { produced: 50, consumed: 0, efficiency: 1.0 },
             upgrades: { miner: 0, belt: 0, value: 0 },
-            selectedSorter: null, // Mémorise le trieur en cours de configuration
+            selectedSorter: null,
             
-            missionIndex: 0,
-            missionProgress: 0,
+            missionIndex: 0, missionProgress: 0,
             missions: [
                 { title: "Phase 1: Données Brutes", desc: "Acheminez 20 Flux Données (Bleu) au Core.", type: 'raw_blue', req: 20 },
-                { title: "Phase 2: Logistique", desc: "Acheminez 20 Flux Traités (Vert).\n<span style='color:#2ecc71'>Débloque: Traitement, Tunnel, Répartiteur & Poubelle.</span>", type: 'proc_blue', req: 20 },
-                { title: "Phase 3: Assemblage", desc: "Nouveaux gisements: Logique (Orange).\nTraitez-les (Jaune) et combinez (Vert+Jaune) dans l'Assembleur.\n<span style='color:#2ecc71'>Débloque: Assembleur, Mine Orange & Trieur Intelligent.</span>", type: 'advanced_purple', req: 15 },
+                { title: "Phase 2: Logistique", desc: "Acheminez 20 Flux Traités (Vert).\n<span style='color:#2ecc71'>Débloque: Traitement, Tunnel, Répartiteur.</span>", type: 'proc_blue', req: 20 },
+                { title: "Phase 3: SÉCURITÉ & ÉNERGIE", desc: "ALERTE: Virus détectés !\nProduisez du Violet (Assembleur).\n<span style='color:#e74c3c'>Nécessite de l'Énergie (Générateur) et des Défenses (Firewall).</span>", type: 'advanced_purple', req: 15 },
                 { title: "Phase 4: Intégration", desc: "Nouveaux gisements: Quantique (Rose).\nCombinez Violet + Rose dans l'Intégrateur.\n<span style='color:#2ecc71'>Débloque: Intégrateur, Mine Rose.</span>", type: 'omega', req: 10 },
-                { title: "Phase 5: Infinie", desc: "Système optimisé. Maximisez les profits et améliorez l'usine.", type: 'none', req: 0 }
+                { title: "Phase 5: Infinie", desc: "Système optimisé. Survivez et maximisez les profits.", type: 'none', req: 0 }
             ],
             
-            buildMode: 'cursor',
-            currentDir: 0,
-            camera: { x: 0, y: 0 },
-            zoom: 1.0,
-            mouseX: 0, mouseY: 0,
-            worldX: 0, worldY: 0,
-            paintButton: null,
-            isMiddleDragging: false,
-            lastMouse: { x: 0, y: 0 },
-            
-            keys: {},
-            tick: 0,
-            core: { x: 50, y: 50 }
+            buildMode: 'cursor', currentDir: 0,
+            camera: { x: 0, y: 0 }, zoom: 1.0,
+            mouseX: 0, mouseY: 0, worldX: 0, worldY: 0,
+            paintButton: null, isMiddleDragging: false, lastMouse: { x: 0, y: 0 },
+            keys: {}, tick: 0, core: { x: 50, y: 50 }
         };
 
         class Tile {
-            constructor(x, y) {
-                this.x = x; this.y = y;
-                this.resource = null;
-                this.building = null;
-            }
+            constructor(x, y) { this.x = x; this.y = y; this.resource = null; this.building = null; }
         }
 
         class Item {
             constructor(startX, startY, type) {
-                this.x = startX; this.y = startY;
-                this.progress = 0;
-                this.gridX = startX; this.gridY = startY;
-                this.movingDir = -1;
-                this.type = type; 
+                this.x = startX; this.y = startY; this.progress = 0;
+                this.gridX = startX; this.gridY = startY; this.movingDir = -1; this.type = type; 
             }
         }
 
@@ -379,7 +379,14 @@
             }
         }
 
-        // --- GESTION DES UPGRADES ---
+        class Enemy {
+            constructor(x, y, hp) {
+                this.x = x; this.y = y; this.hp = hp; this.maxHp = hp;
+                this.speed = 0.02 + Math.random() * 0.02; 
+            }
+        }
+
+        // --- UPGRADES ---
         function getUpgradeCost(type) {
             let lvl = game.upgrades[type];
             if(lvl >= 5) return Infinity;
@@ -390,14 +397,12 @@
         function toggleUpgrades() {
             let m = document.getElementById('upgrade-modal');
             if (m.style.display === 'block') { m.style.display = 'none'; return; }
-            updateUpgradeUI();
-            m.style.display = 'block';
+            updateUpgradeUI(); m.style.display = 'block';
         }
 
         function updateUpgradeUI() {
             ['miner', 'belt', 'value'].forEach(type => {
-                let lvl = game.upgrades[type];
-                let cost = getUpgradeCost(type);
+                let lvl = game.upgrades[type]; let cost = getUpgradeCost(type);
                 document.getElementById(`lvl-${type}`).innerText = `Niveau: ${lvl}/5`;
                 let btn = document.getElementById(`btn-upg-${type}`);
                 if (lvl >= 5) { btn.innerText = "MAX"; btn.disabled = true; } 
@@ -408,39 +413,24 @@
         function buyUpgrade(type) {
             let cost = getUpgradeCost(type);
             if (game.money >= cost && game.upgrades[type] < 5) {
-                game.money -= cost;
-                game.upgrades[type]++;
-                updateUpgradeUI();
-                updateUI();
-                saveGame();
+                game.money -= cost; game.upgrades[type]++;
+                updateUpgradeUI(); updateUI(); saveGame();
             }
         }
 
-        // --- GESTION DES FILTRES DU TRIEUR (V9) ---
+        // --- TRIEUR ---
         const RESOURCES = [
-            { id: 'raw_blue', name: 'Bleu (Donnée)', color: '#00d2ff' },
-            { id: 'proc_blue', name: 'Vert (Traité)', color: '#2ecc71' },
-            { id: 'raw_orange', name: 'Orange (Logique)', color: '#ff9f43' },
-            { id: 'proc_orange', name: 'Jaune (Traité)', color: '#feca57' },
-            { id: 'advanced_purple', name: 'Violet (Composant)', color: '#9b59b6' },
-            { id: 'raw_pink', name: 'Rose (Quantique)', color: '#fd79a8' },
-            { id: 'omega', name: 'Blanc (Omega)', color: '#ffffff' }
+            { id: 'raw_blue', name: 'Bleu', color: '#00d2ff' }, { id: 'proc_blue', name: 'Vert', color: '#2ecc71' },
+            { id: 'raw_orange', name: 'Orange', color: '#ff9f43' }, { id: 'proc_orange', name: 'Jaune', color: '#feca57' },
+            { id: 'advanced_purple', name: 'Violet', color: '#9b59b6' }, { id: 'raw_pink', name: 'Rose', color: '#fd79a8' },
+            { id: 'omega', name: 'Blanc', color: '#ffffff' }
         ];
 
         function openSorterConfig(x, y) {
             game.selectedSorter = {x, y};
             let b = game.grid[x][y].building;
-            
-            // Initialisation par défaut si c'est un ancien trieur ou un nouveau
-            if(!b.filters) {
-                b.filters = {
-                    left: ['raw_blue', 'proc_blue'],
-                    straight: ['raw_orange', 'proc_orange'],
-                    right: ['raw_pink', 'advanced_purple', 'omega']
-                };
-            }
-            updateSorterUI();
-            document.getElementById('sorter-modal').style.display = 'block';
+            if(!b.filters) b.filters = { left: ['raw_blue', 'proc_blue'], straight: ['raw_orange', 'proc_orange'], right: ['raw_pink', 'advanced_purple', 'omega'] };
+            updateSorterUI(); document.getElementById('sorter-modal').style.display = 'block';
         }
 
         function updateSorterUI() {
@@ -448,20 +438,14 @@
             let b = game.grid[game.selectedSorter.x][game.selectedSorter.y].building;
             let container = document.getElementById('sorter-filters-container');
             let html = '';
-
             RESOURCES.forEach(res => {
                 let isLeft = b.filters.left.includes(res.id) ? 'active' : '';
                 let isStraight = b.filters.straight.includes(res.id) ? 'active' : '';
                 let isRight = b.filters.right.includes(res.id) ? 'active' : '';
-
-                html += `<div class="sorter-row">
-                    <div class="sorter-res" style="border-left: 4px solid ${res.color};">${res.name}</div>
-                    <div class="sorter-btns">
-                        <button class="s-btn ${isLeft}" onclick="setSorterFilter('${res.id}', 'left')">←</button>
+                html += `<div class="sorter-row"><div class="sorter-res" style="border-left: 4px solid ${res.color};">${res.name}</div>
+                    <div class="sorter-btns"><button class="s-btn ${isLeft}" onclick="setSorterFilter('${res.id}', 'left')">←</button>
                         <button class="s-btn ${isStraight}" onclick="setSorterFilter('${res.id}', 'straight')">↑</button>
-                        <button class="s-btn ${isRight}" onclick="setSorterFilter('${res.id}', 'right')">→</button>
-                    </div>
-                </div>`;
+                        <button class="s-btn ${isRight}" onclick="setSorterFilter('${res.id}', 'right')">→</button></div></div>`;
             });
             container.innerHTML = html;
         }
@@ -469,94 +453,67 @@
         function setSorterFilter(resId, dir) {
             if(!game.selectedSorter) return;
             let b = game.grid[game.selectedSorter.x][game.selectedSorter.y].building;
-            
-            // Vérifie si la direction était déjà assignée pour ce bouton (système de toggle)
             let wasInDir = b.filters[dir].includes(resId);
-
-            // Retire la ressource de toutes les directions
             b.filters.left = b.filters.left.filter(r => r !== resId);
             b.filters.straight = b.filters.straight.filter(r => r !== resId);
             b.filters.right = b.filters.right.filter(r => r !== resId);
-
-            // Si elle n'était pas dans cette direction, on l'ajoute. Sinon, elle reste désassignée.
-            if(!wasInDir) {
-                b.filters[dir].push(resId);
-            }
-            
-            updateSorterUI();
-            saveGame(); // Sauvegarde automatique du filtre
+            if(!wasInDir) b.filters[dir].push(resId);
+            updateSorterUI(); saveGame(); 
         }
 
-        // --- SYSTEME DE SAUVEGARDE ---
+        // --- SAUVEGARDE ---
         function saveGame() {
             let saveData = {
-                money: game.money, missionIndex: game.missionIndex,
-                missionProgress: game.missionProgress, zoom: game.zoom,
+                money: game.money, missionIndex: game.missionIndex, missionProgress: game.missionProgress, zoom: game.zoom,
                 upgrades: game.upgrades, gridData: []
             };
             for(let x=0; x<game.gridWidth; x++) {
                 for(let y=0; y<game.gridHeight; y++) {
                     let t = game.grid[x][y];
-                    if(t.resource || t.building) {
-                        saveData.gridData.push({x: x, y: y, r: t.resource, b: t.building});
-                    }
+                    if(t.resource || t.building) saveData.gridData.push({x: x, y: y, r: t.resource, b: t.building});
                 }
             }
-            localStorage.setItem('loginode_save_v9', JSON.stringify(saveData));
+            localStorage.setItem('loginode_save_v10', JSON.stringify(saveData));
         }
 
         function loadGame() {
-            let saved = localStorage.getItem('loginode_save_v9');
-            if(!saved) saved = localStorage.getItem('loginode_save_v8'); 
-            if(!saved) saved = localStorage.getItem('loginode_save_v7'); 
-            if(!saved) saved = localStorage.getItem('loginode_save_v6'); 
-            
+            let saved = localStorage.getItem('loginode_save_v10') || localStorage.getItem('loginode_save_v9');
             if(saved) {
                 try {
                     let data = JSON.parse(saved);
-                    game.money = data.money;
-                    game.missionIndex = data.missionIndex || 0;
-                    game.missionProgress = data.missionProgress || 0;
-                    game.zoom = data.zoom || 1.0;
+                    game.money = data.money; game.missionIndex = data.missionIndex || 0;
+                    game.missionProgress = data.missionProgress || 0; game.zoom = data.zoom || 1.0;
                     if(data.upgrades) game.upgrades = data.upgrades;
                     
                     game.grid = [];
                     for (let x = 0; x < game.gridWidth; x++) {
                         game.grid[x] = [];
-                        for (let y = 0; y < game.gridHeight; y++) {
-                            game.grid[x][y] = new Tile(x, y);
-                        }
+                        for (let y = 0; y < game.gridHeight; y++) game.grid[x][y] = new Tile(x, y);
                     }
                     data.gridData.forEach(d => {
                         if(game.grid[d.x] && game.grid[d.x][d.y]) {
-                            game.grid[d.x][d.y].resource = d.r;
-                            game.grid[d.x][d.y].building = d.b;
+                            game.grid[d.x][d.y].resource = d.r; game.grid[d.x][d.y].building = d.b;
                         }
                     });
                     
                     game.camera.x = Math.floor(window.innerWidth / 2 - (game.core.x * TILE_SIZE * game.zoom + (TILE_SIZE*game.zoom) / 2));
                     game.camera.y = Math.floor(window.innerHeight / 2 - (game.core.y * TILE_SIZE * game.zoom + (TILE_SIZE*game.zoom) / 2));
-                    showNotification("Partie chargée avec succès !");
+                    showNotification("Partie chargée !");
                     return true;
-                } catch(e) { console.error("Sauvegarde corrompue", e); }
+                } catch(e) { console.error(e); }
             }
             return false;
         }
 
         function resetGame() {
-            if(confirm("Êtes-vous sûr de vouloir effacer votre sauvegarde et tout recommencer ?")) {
-                localStorage.removeItem('loginode_save_v9');
-                localStorage.removeItem('loginode_save_v8');
-                localStorage.removeItem('loginode_save_v7');
-                localStorage.removeItem('loginode_save_v6');
-                location.reload();
+            if(confirm("Êtes-vous sûr de vouloir effacer votre sauvegarde ?")) {
+                localStorage.clear(); location.reload();
             }
         }
 
         function showNotification(msg) {
             let notif = document.getElementById('notification');
-            notif.innerText = msg;
-            notif.style.opacity = 1;
+            notif.innerText = msg; notif.style.opacity = 1;
             setTimeout(() => { notif.style.opacity = 0; }, 2000);
         }
 
@@ -565,19 +522,15 @@
             game.grid = [];
             for (let x = 0; x < game.gridWidth; x++) {
                 game.grid[x] = [];
-                for (let y = 0; y < game.gridHeight; y++) {
-                    game.grid[x][y] = new Tile(x, y);
-                }
+                for (let y = 0; y < game.gridHeight; y++) game.grid[x][y] = new Tile(x, y);
             }
-
             game.grid[game.core.x][game.core.y].building = { type: 'core' };
             game.camera.x = Math.floor(window.innerWidth / 2 - (game.core.x * TILE_SIZE * game.zoom + (TILE_SIZE*game.zoom) / 2));
             game.camera.y = Math.floor(window.innerHeight / 2 - (game.core.y * TILE_SIZE * game.zoom + (TILE_SIZE*game.zoom) / 2));
 
             let nodesPlaced = 0;
             while(nodesPlaced < 120) {
-                let rx = Math.floor(Math.random() * game.gridWidth);
-                let ry = Math.floor(Math.random() * game.gridHeight);
+                let rx = Math.floor(Math.random() * game.gridWidth), ry = Math.floor(Math.random() * game.gridHeight);
                 let dist = Math.abs(rx - game.core.x) + Math.abs(ry - game.core.y);
                 if (dist > 4 && !game.grid[rx][ry].resource) {
                     let rand = Math.random();
@@ -589,14 +542,11 @@
             }
         }
 
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 
         function isUnlocked(mode) {
             if (['splitter', 'upgrader', 'tunnel', 'trash'].includes(mode)) return game.missionIndex >= 1;
-            if (['assembler', 'sorter'].includes(mode)) return game.missionIndex >= 2;
+            if (['assembler', 'sorter', 'generator', 'firewall'].includes(mode)) return game.missionIndex >= 2;
             if (mode === 'integrator') return game.missionIndex >= 3;
             return true;
         }
@@ -606,14 +556,19 @@
             let tile = game.grid[gx][gy];
 
             if (game.buildMode === 'delete' || isRightClick) {
-                if (tile.building && tile.building.type !== 'core') tile.building = null;
+                if (tile.building && tile.building.type !== 'core') {
+                    // Si on supprime un générateur, recalcul de l'énergie immédiat
+                    let wasGen = tile.building.type === 'generator';
+                    tile.building = null;
+                    if (wasGen) calculatePower();
+                }
                 return;
             }
 
             if (tile.building || game.buildMode === 'cursor' || game.buildMode === 'pan') return;
             if (!isUnlocked(game.buildMode)) return;
 
-            const costs = { 'miner': 50, 'belt': 10, 'upgrader': 100, 'assembler': 300, 'splitter': 50, 'sorter': 200, 'integrator': 500, 'tunnel': 150, 'trash': 20 };
+            const costs = { 'miner': 50, 'belt': 10, 'upgrader': 100, 'assembler': 300, 'splitter': 50, 'sorter': 200, 'integrator': 500, 'tunnel': 150, 'trash': 20, 'generator': 200, 'firewall': 300 };
             
             if (game.money >= costs[game.buildMode]) {
                 if (game.buildMode === 'miner') {
@@ -623,25 +578,37 @@
                 }
                 
                 game.money -= costs[game.buildMode];
-                
                 let bData = { type: game.buildMode, dir: game.currentDir };
+                
                 if (game.buildMode === 'assembler') bData.inventory = { proc_blue: 0, proc_orange: 0 };
                 if (game.buildMode === 'integrator') bData.inventory = { advanced_purple: 0, raw_pink: 0 };
                 if (game.buildMode === 'splitter') bData.toggle = false;
-                
-                // On attache des filtres par défaut au nouveau trieur
-                if (game.buildMode === 'sorter') {
-                    bData.filters = {
-                        left: ['raw_blue', 'proc_blue'],
-                        straight: ['raw_orange', 'proc_orange'],
-                        right: ['raw_pink', 'advanced_purple', 'omega']
-                    };
-                }
+                if (game.buildMode === 'sorter') bData.filters = { left: ['raw_blue', 'proc_blue'], straight: ['raw_orange', 'proc_orange'], right: ['raw_pink', 'advanced_purple', 'omega'] };
                 
                 tile.building = bData;
+                calculatePower();
                 updateUI();
                 if(document.getElementById('upgrade-modal').style.display === 'block') updateUpgradeUI();
             }
+        }
+
+        // --- GESTION ENERGIE ---
+        function calculatePower() {
+            let prod = 50; // Base Core
+            let cons = 0;
+            for (let x = 0; x < game.gridWidth; x++) {
+                for (let y = 0; y < game.gridHeight; y++) {
+                    let b = game.grid[x][y].building;
+                    if (b) {
+                        if (b.type === 'generator') prod += 100;
+                        if (POWER_USAGE[b.type]) cons += POWER_USAGE[b.type];
+                    }
+                }
+            }
+            game.power.produced = prod;
+            game.power.consumed = cons;
+            game.power.efficiency = cons > 0 ? Math.min(1.0, prod / cons) : 1.0;
+            updateUI();
         }
 
         // --- LOGIQUE METIER ---
@@ -651,15 +618,19 @@
 
             if (game.tick > 0 && game.tick % 600 === 0) saveGame();
 
+            // Calcul de l'énergie toutes les secondes
+            if (game.tick % 60 === 0) calculatePower();
+
             const camSpeed = 12;
             if (game.keys['ArrowUp'] || game.keys['z'] || game.keys['w']) game.camera.y += camSpeed;
             if (game.keys['ArrowDown'] || game.keys['s']) game.camera.y -= camSpeed;
             if (game.keys['ArrowLeft'] || game.keys['q'] || game.keys['a']) game.camera.x += camSpeed;
             if (game.keys['ArrowRight'] || game.keys['d']) game.camera.x -= camSpeed;
 
-            // 1. Minage 
+            // 1. Minage (Affecté par l'énergie)
             let minerInterval = Math.max(10, 60 - (game.upgrades.miner * 10)); 
-            if (game.tick % minerInterval === 0) {
+            // Si l'efficacité est < 1, on mine moins souvent
+            if (game.power.efficiency > 0 && game.tick % Math.floor(minerInterval / game.power.efficiency) === 0) {
                 for (let x = 0; x < game.gridWidth; x++) {
                     for (let y = 0; y < game.gridHeight; y++) {
                         let tile = game.grid[x][y];
@@ -676,13 +647,75 @@
                 }
             }
 
+            // 2. Gestion des Menaces (Ennemis)
+            if (game.missionIndex >= 2 && game.tick % 180 === 0) { // Phase 3+, spawn toutes les 3s
+                let spawnChance = Math.min(0.5, 0.1 * game.missionIndex);
+                if (Math.random() < spawnChance) {
+                    let ex = Math.random() < 0.5 ? (Math.random() < 0.5 ? 0 : game.gridWidth - 1) : Math.random() * game.gridWidth;
+                    let ey = ex === 0 || ex === game.gridWidth - 1 ? Math.random() * game.gridHeight : (Math.random() < 0.5 ? 0 : game.gridHeight - 1);
+                    game.enemies.push(new Enemy(ex, ey, 100 * (game.missionIndex - 1)));
+                }
+            }
+
+            for (let i = game.enemies.length - 1; i >= 0; i--) {
+                let e = game.enemies[i];
+                // Se déplace vers le Core
+                let dx = game.core.x - e.x;
+                let dy = game.core.y - e.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > 0) { e.x += (dx/dist) * e.speed; e.y += (dy/dist) * e.speed; }
+
+                // Collision avec les bâtiments (sauf Core et Sol)
+                let gx = Math.round(e.x), gy = Math.round(e.y);
+                if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight) {
+                    let b = game.grid[gx][gy].building;
+                    if (b && b.type !== 'core') {
+                        // L'ennemi détruit le bâtiment et meurt
+                        game.grid[gx][gy].building = null;
+                        game.particles.push(new Particle(gx * TILE_SIZE, gy * TILE_SIZE, "CORROMPU", "#e74c3c"));
+                        game.enemies.splice(i, 1);
+                        calculatePower();
+                        continue;
+                    }
+                }
+            }
+
+            // 3. Défenses (Firewalls)
+            if (game.power.efficiency > 0.1 && game.tick % Math.floor(30 / game.power.efficiency) === 0) {
+                for (let x = 0; x < game.gridWidth; x++) {
+                    for (let y = 0; y < game.gridHeight; y++) {
+                        let b = game.grid[x][y].building;
+                        if (b && b.type === 'firewall') {
+                            // Cherche l'ennemi le plus proche dans un rayon de 5
+                            let closest = null; let minDist = 6;
+                            for (let e of game.enemies) {
+                                let dist = Math.sqrt(Math.pow(e.x - x, 2) + Math.pow(e.y - y, 2));
+                                if (dist < minDist) { minDist = dist; closest = e; }
+                            }
+                            if (closest) {
+                                game.lasers.push({ x1: x, y1: y, x2: closest.x, y2: closest.y, life: 10 });
+                                closest.hp -= 50;
+                                if (closest.hp <= 0) {
+                                    game.particles.push(new Particle(closest.x * TILE_SIZE, closest.y * TILE_SIZE, "ÉLIMINÉ", "#3498db"));
+                                    game.enemies = game.enemies.filter(en => en !== closest);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Nettoyage visuels
+            for(let i=game.lasers.length-1; i>=0; i--) {
+                game.lasers[i].life--;
+                if(game.lasers[i].life <= 0) game.lasers.splice(i, 1);
+            }
             for(let i=game.particles.length-1; i>=0; i--) {
-                game.particles[i].life -= 1.5;
-                game.particles[i].y -= 0.5;
+                game.particles[i].life -= 1.5; game.particles[i].y -= 0.5;
                 if(game.particles[i].life <= 0) game.particles.splice(i, 1);
             }
 
-            // 2. Mouvement des objets
+            // 4. Mouvement des objets (Affecté par l'énergie !)
             for (let i = game.items.length - 1; i >= 0; i--) {
                 let item = game.items[i];
                 let currentTile = game.grid[item.gridX] && game.grid[item.gridX][item.gridY];
@@ -697,22 +730,14 @@
                             const baseValues = { 'raw_blue': 15, 'proc_blue': 40, 'raw_orange': 20, 'proc_orange': 50, 'advanced_purple': 200, 'raw_pink': 100, 'omega': 1000 };
                             let val = Math.floor((baseValues[item.type] || 0) * (1 + (game.upgrades.value * 0.5)));
                             
-                            game.money += val;
-                            game.deliveries.push(Date.now());
-                            
-                            game.particles.push(new Particle(
-                                item.x * TILE_SIZE + TILE_SIZE/2, 
-                                item.y * TILE_SIZE + TILE_SIZE/2 - 10, 
-                                `+${val}¢`, 
-                                '#2ecc71'
-                            ));
+                            game.money += val; game.deliveries.push(Date.now());
+                            game.particles.push(new Particle(item.x * TILE_SIZE + TILE_SIZE/2, item.y * TILE_SIZE + TILE_SIZE/2 - 10, `+${val}¢`, '#2ecc71'));
                             
                             let cm = game.missions[game.missionIndex];
                             if (cm.type === item.type) {
                                 game.missionProgress++;
                                 if (game.missionProgress >= cm.req) {
-                                    game.missionIndex++;
-                                    game.missionProgress = 0;
+                                    game.missionIndex++; game.missionProgress = 0;
                                     let mc = document.getElementById('missionContainer');
                                     mc.style.backgroundColor = "rgba(46, 204, 113, 0.4)";
                                     setTimeout(() => { mc.style.backgroundColor = "rgba(77, 184, 255, 0.05)"; }, 500);
@@ -724,55 +749,28 @@
                             game.items.splice(i, 1);
                             continue;
                         }
-                        else if (b.type === 'trash') {
-                            game.particles.push(new Particle(item.x * TILE_SIZE + TILE_SIZE/2, item.y * TILE_SIZE + TILE_SIZE/2, `Supprimé`, '#e74c3c'));
-                            game.items.splice(i, 1);
-                            continue;
-                        }
-                        else if (b.type === 'belt') {
-                            item.movingDir = b.dir;
-                        } 
+                        else if (b.type === 'trash') { game.particles.push(new Particle(item.x * TILE_SIZE, item.y * TILE_SIZE, `DEL`, '#e74c3c')); game.items.splice(i, 1); continue; }
+                        else if (b.type === 'belt') { item.movingDir = b.dir; } 
                         else if (b.type === 'tunnel') {
                             let foundExit = false;
                             for(let dist=1; dist<=5; dist++) {
-                                let nx = item.gridX + DIRS[b.dir].x * dist;
-                                let ny = item.gridY + DIRS[b.dir].y * dist;
-                                let target = game.grid[nx] && game.grid[nx][ny];
-                                if (target && target.building && target.building.type === 'tunnel' && target.building.dir === b.dir) {
-                                    item.gridX = nx; item.gridY = ny;
-                                    item.x = nx; item.y = ny;
-                                    item.movingDir = b.dir; 
-                                    foundExit = true;
-                                    break;
+                                let nx = item.gridX + DIRS[b.dir].x * dist; let ny = item.gridY + DIRS[b.dir].y * dist;
+                                let t = game.grid[nx] && game.grid[nx][ny];
+                                if (t && t.building && t.building.type === 'tunnel' && t.building.dir === b.dir) {
+                                    item.gridX = nx; item.gridY = ny; item.x = nx; item.y = ny; item.movingDir = b.dir; foundExit = true; break;
                                 }
                             }
                             if(!foundExit) item.movingDir = b.dir;
                         }
                         else if (b.type === 'splitter') {
-                            let dirLeft = (b.dir + 3) % 4;
-                            let dirRight = (b.dir + 1) % 4;
-                            item.movingDir = b.toggle ? dirLeft : dirRight;
-                            b.toggle = !b.toggle;
+                            item.movingDir = b.toggle ? (b.dir + 3) % 4 : (b.dir + 1) % 4; b.toggle = !b.toggle;
                         }
                         else if (b.type === 'sorter') {
-                            let dirLeft = (b.dir + 3) % 4;
-                            let dirRight = (b.dir + 1) % 4;
-                            let dirStraight = b.dir;
-                            
-                            // Si c'est une ancienne sauvegarde sans filtre, on l'initialise
-                            if (!b.filters) {
-                                b.filters = {
-                                    left: ['raw_blue', 'proc_blue'],
-                                    straight: ['raw_orange', 'proc_orange'],
-                                    right: ['raw_pink', 'advanced_purple', 'omega']
-                                };
-                            }
-
-                            // Application des filtres
-                            if (b.filters.left.includes(item.type)) item.movingDir = dirLeft;
-                            else if (b.filters.straight.includes(item.type)) item.movingDir = dirStraight;
-                            else if (b.filters.right.includes(item.type)) item.movingDir = dirRight;
-                            else item.movingDir = -1; // Objet bloqué s'il n'est pas filtré !
+                            if(!b.filters) b.filters = { left: ['raw_blue', 'proc_blue'], straight: ['raw_orange', 'proc_orange'], right: ['raw_pink', 'advanced_purple', 'omega'] };
+                            if (b.filters.left.includes(item.type)) item.movingDir = (b.dir + 3) % 4;
+                            else if (b.filters.straight.includes(item.type)) item.movingDir = b.dir;
+                            else if (b.filters.right.includes(item.type)) item.movingDir = (b.dir + 1) % 4;
+                            else item.movingDir = -1; 
                         }
                         else if (b.type === 'upgrader') {
                             if (item.type === 'raw_blue') item.type = 'proc_blue';
@@ -782,62 +780,52 @@
                         else if (b.type === 'assembler') {
                             if (item.type === 'proc_blue' && b.inventory.proc_blue < 1) {
                                 b.inventory.proc_blue++;
-                                if (b.inventory.proc_orange >= 1) {
-                                    b.inventory.proc_blue = 0; b.inventory.proc_orange = 0;
-                                    item.type = 'advanced_purple'; item.movingDir = b.dir;
-                                } else { game.items.splice(i, 1); continue; }
-                            } 
-                            else if (item.type === 'proc_orange' && b.inventory.proc_orange < 1) {
+                                if (b.inventory.proc_orange >= 1) { b.inventory.proc_blue = 0; b.inventory.proc_orange = 0; item.type = 'advanced_purple'; item.movingDir = b.dir; } 
+                                else { game.items.splice(i, 1); continue; }
+                            } else if (item.type === 'proc_orange' && b.inventory.proc_orange < 1) {
                                 b.inventory.proc_orange++;
-                                if (b.inventory.proc_blue >= 1) {
-                                    b.inventory.proc_blue = 0; b.inventory.proc_orange = 0;
-                                    item.type = 'advanced_purple'; item.movingDir = b.dir;
-                                } else { game.items.splice(i, 1); continue; }
-                            } else { item.movingDir = -1; }
+                                if (b.inventory.proc_blue >= 1) { b.inventory.proc_blue = 0; b.inventory.proc_orange = 0; item.type = 'advanced_purple'; item.movingDir = b.dir; } 
+                                else { game.items.splice(i, 1); continue; }
+                            } else item.movingDir = -1; 
                         }
                         else if (b.type === 'integrator') {
                             if (item.type === 'advanced_purple' && b.inventory.advanced_purple < 1) {
                                 b.inventory.advanced_purple++;
-                                if (b.inventory.raw_pink >= 1) {
-                                    b.inventory.advanced_purple = 0; b.inventory.raw_pink = 0;
-                                    item.type = 'omega'; item.movingDir = b.dir;
-                                } else { game.items.splice(i, 1); continue; }
-                            } 
-                            else if (item.type === 'raw_pink' && b.inventory.raw_pink < 1) {
+                                if (b.inventory.raw_pink >= 1) { b.inventory.advanced_purple = 0; b.inventory.raw_pink = 0; item.type = 'omega'; item.movingDir = b.dir; } 
+                                else { game.items.splice(i, 1); continue; }
+                            } else if (item.type === 'raw_pink' && b.inventory.raw_pink < 1) {
                                 b.inventory.raw_pink++;
-                                if (b.inventory.advanced_purple >= 1) {
-                                    b.inventory.advanced_purple = 0; b.inventory.raw_pink = 0;
-                                    item.type = 'omega'; item.movingDir = b.dir;
-                                } else { game.items.splice(i, 1); continue; }
-                            } else { item.movingDir = -1; }
+                                if (b.inventory.advanced_purple >= 1) { b.inventory.advanced_purple = 0; b.inventory.raw_pink = 0; item.type = 'omega'; item.movingDir = b.dir; } 
+                                else { game.items.splice(i, 1); continue; }
+                            } else item.movingDir = -1; 
+                        }
+                        else if (b.type === 'generator' || b.type === 'firewall') {
+                            item.movingDir = -1; // Objets bloqués
                         }
                         else if (b.type === 'miner') {
                              let pushed = false;
                              for(let d=0; d<4; d++) {
-                                 let nx = item.gridX + DIRS[d].x;
-                                 let ny = item.gridY + DIRS[d].y;
-                                 let adj = game.grid[nx] && game.grid[nx][ny];
-                                 if(adj && adj.building && ['belt', 'tunnel', 'upgrader', 'splitter', 'sorter', 'assembler', 'integrator', 'trash'].includes(adj.building.type)) {
-                                    item.movingDir = d; pushed = true; break;
-                                 }
+                                 let nx = item.gridX + DIRS[d].x; let ny = item.gridY + DIRS[d].y; let adj = game.grid[nx] && game.grid[nx][ny];
+                                 if(adj && adj.building && !['generator', 'firewall'].includes(adj.building.type)) { item.movingDir = d; pushed = true; break; }
                              }
                              if(!pushed) item.movingDir = -1;
                         }
-                    } else { item.movingDir = -1; }
+                    } else item.movingDir = -1; 
                 }
 
                 if (item.movingDir !== -1) {
                     const baseSpeeds = { 'raw_blue': 0.06, 'proc_blue': 0.05, 'raw_orange': 0.06, 'proc_orange': 0.05, 'advanced_purple': 0.04, 'raw_pink': 0.04, 'omega': 0.03 };
                     let speedMod = game.upgrades.belt * 0.015;
-                    item.progress += (baseSpeeds[item.type] || 0.05) + speedMod;
+                    // Application de l'efficacité énergétique sur la vitesse de déplacement
+                    let currentSpeed = ((baseSpeeds[item.type] || 0.05) + speedMod) * Math.max(0.1, game.power.efficiency);
                     
+                    item.progress += currentSpeed;
                     item.x = item.gridX + DIRS[item.movingDir].x * item.progress;
                     item.y = item.gridY + DIRS[item.movingDir].y * item.progress;
 
                     if (item.progress >= 1) {
                         item.gridX += DIRS[item.movingDir].x; item.gridY += DIRS[item.movingDir].y;
-                        item.x = item.gridX; item.y = item.gridY;
-                        item.progress = 0; item.movingDir = -1;
+                        item.x = item.gridX; item.y = item.gridY; item.progress = 0; item.movingDir = -1;
                     }
                 }
             }
@@ -865,21 +853,15 @@
             let endX = Math.min(game.gridWidth, startX + Math.ceil(canvas.width / (TILE_SIZE * game.zoom)) + 1); 
             let endY = Math.min(game.gridHeight, startY + Math.ceil(canvas.height / (TILE_SIZE * game.zoom)) + 1);
 
-            for (let x = startX; x <= endX; x++) {
-                ctx.beginPath(); ctx.moveTo(x * TILE_SIZE, startY * TILE_SIZE); ctx.lineTo(x * TILE_SIZE, endY * TILE_SIZE); ctx.stroke();
-            }
-            for (let y = startY; y <= endY; y++) {
-                ctx.beginPath(); ctx.moveTo(startX * TILE_SIZE, y * TILE_SIZE); ctx.lineTo(endX * TILE_SIZE, y * TILE_SIZE); ctx.stroke();
-            }
+            for (let x = startX; x <= endX; x++) { ctx.beginPath(); ctx.moveTo(x * TILE_SIZE, startY * TILE_SIZE); ctx.lineTo(x * TILE_SIZE, endY * TILE_SIZE); ctx.stroke(); }
+            for (let y = startY; y <= endY; y++) { ctx.beginPath(); ctx.moveTo(startX * TILE_SIZE, y * TILE_SIZE); ctx.lineTo(endX * TILE_SIZE, y * TILE_SIZE); ctx.stroke(); }
 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'; 
-            ctx.lineWidth = 2 / game.zoom;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'; ctx.lineWidth = 2 / game.zoom;
             ctx.strokeRect(0, 0, game.gridWidth * TILE_SIZE, game.gridHeight * TILE_SIZE);
 
             for (let x = startX; x < endX; x++) {
                 for (let y = startY; y < endY; y++) {
-                    let tile = game.grid[x][y];
-                    let px = x * TILE_SIZE; let py = y * TILE_SIZE;
+                    let tile = game.grid[x][y]; let px = x * TILE_SIZE; let py = y * TILE_SIZE;
 
                     if (tile.resource) {
                         if (tile.resource === 'node_blue') {
@@ -903,6 +885,14 @@
                             ctx.fillStyle = '#f1c40f'; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
                             ctx.fillStyle = '#000'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('CORE', px + TILE_SIZE/2, py + TILE_SIZE/2);
                         } 
+                        else if (b.type === 'generator') {
+                            ctx.fillStyle = '#f1c40f'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                            ctx.fillStyle = '#000'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⚡', px + TILE_SIZE/2, py + TILE_SIZE/2);
+                        }
+                        else if (b.type === 'firewall') {
+                            ctx.fillStyle = '#c0392b'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                            ctx.fillStyle = '#fff'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('♜', px + TILE_SIZE/2, py + TILE_SIZE/2);
+                        }
                         else if (b.type === 'trash') {
                             ctx.fillStyle = '#c0392b'; ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
                             ctx.fillStyle = '#000'; ctx.fillRect(px + 8, py + 8, TILE_SIZE - 16, TILE_SIZE - 16);
@@ -915,11 +905,8 @@
                         }
                         else if (b.type === 'tunnel') {
                             ctx.fillStyle = '#2c3e50'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-                            ctx.fillStyle = '#000'; 
-                            ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
-                            ctx.fillRect(-12, -18, 24, 20); 
-                            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-14, -20, 28, 6); 
-                            ctx.restore();
+                            ctx.fillStyle = '#000'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
+                            ctx.fillRect(-12, -18, 24, 20); ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-14, -20, 28, 6); ctx.restore();
                         }
                         else if (b.type === 'splitter') {
                             ctx.fillStyle = '#1abc9c'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
@@ -931,12 +918,7 @@
                             ctx.fillStyle = '#3498db'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             ctx.fillStyle = '#2980b9'; ctx.fillRect(px + 8, py + 8, TILE_SIZE - 16, TILE_SIZE - 16);
                             ctx.fillStyle = '#fff'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
-                            
-                            // Affichage visuel qui montre que c'est un Trieur
-                            ctx.font = '14px Arial';
-                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                            ctx.fillText('⚙', 0, 0); 
-                            ctx.restore();
+                            ctx.font = '14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⚙', 0, 0); ctx.restore();
                         }
                         else if (b.type === 'upgrader') {
                             ctx.fillStyle = '#e67e22'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
@@ -961,27 +943,46 @@
                             ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(px + 8, py); ctx.lineTo(px + TILE_SIZE - 8, py); ctx.lineTo(px + TILE_SIZE, py + 8); ctx.lineTo(px + TILE_SIZE, py + TILE_SIZE - 8); ctx.lineTo(px + TILE_SIZE - 8, py + TILE_SIZE); ctx.lineTo(px + 8, py + TILE_SIZE); ctx.lineTo(px, py + TILE_SIZE - 8); ctx.lineTo(px, py + 8); ctx.fill();
                             ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.arc(px + TILE_SIZE/2, py + TILE_SIZE/2, 8 + Math.sin(game.tick * 0.1) * 2, 0, Math.PI * 2); ctx.fill();
                         }
+                        
+                        // Icône d'Alerte si pas d'énergie
+                        if (game.power.efficiency < 1.0 && POWER_USAGE[b.type]) {
+                            ctx.fillStyle = 'rgba(231, 76, 60, 0.8)';
+                            if (game.tick % 60 < 30) {
+                                ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.fillText('⚡', px + TILE_SIZE - 10, py + 15);
+                            }
+                        }
                     }
                 }
             }
 
+            // Dessin des Ennemis (Virus)
+            for (let e of game.enemies) {
+                if (e.x >= startX - 1 && e.x <= endX && e.y >= startY - 1 && e.y <= endY) {
+                    ctx.fillStyle = '#e74c3c';
+                    let px = e.x * TILE_SIZE; let py = e.y * TILE_SIZE;
+                    let glitch = (Math.random() - 0.5) * 4;
+                    ctx.fillRect(px + 8 + glitch, py + 8 - glitch, TILE_SIZE - 16, TILE_SIZE - 16);
+                    ctx.fillStyle = '#000'; ctx.fillRect(px + 12 + glitch, py + 12, 6, 6); ctx.fillRect(px + 22 + glitch, py + 12, 6, 6);
+                }
+            }
+
+            // Dessin des Lasers (Défense)
+            ctx.lineWidth = 3;
+            for (let l of game.lasers) {
+                ctx.strokeStyle = `rgba(52, 152, 219, ${l.life / 10})`;
+                ctx.beginPath();
+                ctx.moveTo(l.x1 * TILE_SIZE + TILE_SIZE/2, l.y1 * TILE_SIZE + TILE_SIZE/2);
+                ctx.lineTo(l.x2 * TILE_SIZE + TILE_SIZE/2, l.y2 * TILE_SIZE + TILE_SIZE/2);
+                ctx.stroke();
+            }
+
             for (let item of game.items) {
                 if (item.x >= startX - 1 && item.x <= endX && item.y >= startY - 1 && item.y <= endY) {
-                    let colors = {
-                        'raw_blue': '#00d2ff', 'proc_blue': '#2ecc71',
-                        'raw_orange': '#ff9f43', 'proc_orange': '#feca57',
-                        'advanced_purple': '#9b59b6', 'raw_pink': '#fd79a8', 'omega': '#ffffff'
-                    };
-                    ctx.fillStyle = colors[item.type];
-                    ctx.shadowColor = colors[item.type];
-                    ctx.shadowBlur = (item.type === 'omega') ? 20 : 10;
-                    
-                    let px = item.x * TILE_SIZE + TILE_SIZE / 2;
-                    let py = item.y * TILE_SIZE + TILE_SIZE / 2;
-                    ctx.beginPath();
-                    let radius = (item.type === 'omega') ? 8 : (item.type === 'advanced_purple' ? 6 : 4);
-                    ctx.arc(px, py, radius, 0, Math.PI * 2);
-                    ctx.fill();
+                    let colors = { 'raw_blue': '#00d2ff', 'proc_blue': '#2ecc71', 'raw_orange': '#ff9f43', 'proc_orange': '#feca57', 'advanced_purple': '#9b59b6', 'raw_pink': '#fd79a8', 'omega': '#ffffff' };
+                    ctx.fillStyle = colors[item.type]; ctx.shadowColor = colors[item.type]; ctx.shadowBlur = (item.type === 'omega') ? 20 : 10;
+                    let px = item.x * TILE_SIZE + TILE_SIZE / 2; let py = item.y * TILE_SIZE + TILE_SIZE / 2;
+                    ctx.beginPath(); let radius = (item.type === 'omega') ? 8 : (item.type === 'advanced_purple' ? 6 : 4);
+                    ctx.arc(px, py, radius, 0, Math.PI * 2); ctx.fill();
                 }
             }
             ctx.shadowBlur = 0;
@@ -989,9 +990,7 @@
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 16px Arial';
             for (let p of game.particles) {
                 if (p.x/TILE_SIZE >= startX && p.x/TILE_SIZE <= endX && p.y/TILE_SIZE >= startY && p.y/TILE_SIZE <= endY) {
-                    ctx.fillStyle = p.color;
-                    ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-                    ctx.fillText(p.text, p.x, p.y);
+                    ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life / p.maxLife); ctx.fillText(p.text, p.x, p.y);
                 }
             }
             ctx.globalAlpha = 1.0;
@@ -1000,7 +999,7 @@
             if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight && !game.isMiddleDragging) {
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2 / game.zoom; ctx.strokeRect(gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-                if (['belt', 'miner', 'upgrader', 'splitter', 'sorter', 'assembler', 'integrator', 'tunnel', 'trash'].includes(game.buildMode)) {
+                if (['belt', 'miner', 'upgrader', 'splitter', 'sorter', 'assembler', 'integrator', 'tunnel', 'trash', 'generator', 'firewall'].includes(game.buildMode)) {
                     ctx.globalAlpha = 0.5; let px = gx * TILE_SIZE; let py = gy * TILE_SIZE;
                     ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(game.currentDir * Math.PI / 2);
                     
@@ -1013,6 +1012,12 @@
                     else if (game.buildMode === 'assembler') { ctx.fillStyle = '#8e44ad'; ctx.fillRect(-18, -18, 36, 36); }
                     else if (game.buildMode === 'integrator') { ctx.fillStyle = '#ecf0f1'; ctx.fillRect(-18, -18, 36, 36); }
                     else if (game.buildMode === 'miner') { ctx.fillStyle = '#e74c3c'; ctx.fillRect(-16, -16, 32, 32); }
+                    else if (game.buildMode === 'generator') { ctx.fillStyle = '#f1c40f'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#000'; ctx.font='20px Arial'; ctx.fillText('⚡', 0, 0); }
+                    else if (game.buildMode === 'firewall') { 
+                        ctx.fillStyle = '#c0392b'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.font='20px Arial'; ctx.fillText('♜', 0, 0); 
+                        // Range indicator
+                        ctx.strokeStyle = 'rgba(231, 76, 60, 0.2)'; ctx.beginPath(); ctx.arc(0, 0, TILE_SIZE * 5, 0, Math.PI*2); ctx.stroke(); ctx.fillStyle = 'rgba(231, 76, 60, 0.05)'; ctx.fill();
+                    }
                     
                     ctx.restore(); ctx.globalAlpha = 1.0;
                 }
@@ -1020,24 +1025,15 @@
             ctx.restore();
 
             // Minimap
-            let mapSize = 150;
-            let mapX = canvas.width - mapSize - 20;
-            let mapY = canvas.height - mapSize - 20;
-            
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(mapX, mapY, mapSize, mapSize);
-            ctx.strokeStyle = '#4db8ff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(mapX, mapY, mapSize, mapSize);
-            
-            let scaleX = mapSize / game.gridWidth;
-            let scaleY = mapSize / game.gridHeight;
-            
+            let mapSize = 150; let mapX = canvas.width - mapSize - 20; let mapY = canvas.height - mapSize - 20;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(mapX, mapY, mapSize, mapSize); ctx.strokeStyle = '#4db8ff'; ctx.lineWidth = 2; ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+            let scaleX = mapSize / game.gridWidth; let scaleY = mapSize / game.gridHeight;
             for (let x = 0; x < game.gridWidth; x++) {
                 for (let y = 0; y < game.gridHeight; y++) {
                     let t = game.grid[x][y];
                     if (t.building) {
                         if (t.building.type === 'core') ctx.fillStyle = '#f1c40f';
+                        else if (t.building.type === 'firewall' || t.building.type === 'generator') ctx.fillStyle = '#e74c3c';
                         else ctx.fillStyle = '#7f8c8d';
                         ctx.fillRect(mapX + x * scaleX, mapY + y * scaleY, scaleX, scaleY);
                     } else if (t.resource) {
@@ -1048,20 +1044,13 @@
                     }
                 }
             }
+            for (let e of game.enemies) { ctx.fillStyle = '#ff0000'; ctx.fillRect(mapX + e.x * scaleX, mapY + e.y * scaleY, scaleX * 2, scaleY * 2); }
 
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(mapX, mapY, mapSize, mapSize);
-            ctx.clip(); 
-            
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.lineWidth = 1;
-            let vw = (canvas.width / (TILE_SIZE * game.zoom)) * scaleX;
-            let vh = (canvas.height / (TILE_SIZE * game.zoom)) * scaleY;
-            let vx = mapX + (-game.camera.x / (TILE_SIZE * game.zoom)) * scaleX;
-            let vy = mapY + (-game.camera.y / (TILE_SIZE * game.zoom)) * scaleY;
-            ctx.strokeRect(vx, vy, vw, vh);
-            ctx.restore();
+            ctx.save(); ctx.beginPath(); ctx.rect(mapX, mapY, mapSize, mapSize); ctx.clip(); 
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; ctx.lineWidth = 1;
+            let vw = (canvas.width / (TILE_SIZE * game.zoom)) * scaleX; let vh = (canvas.height / (TILE_SIZE * game.zoom)) * scaleY;
+            let vx = mapX + (-game.camera.x / (TILE_SIZE * game.zoom)) * scaleX; let vy = mapY + (-game.camera.y / (TILE_SIZE * game.zoom)) * scaleY;
+            ctx.strokeRect(vx, vy, vw, vh); ctx.restore();
         }
 
         function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
@@ -1071,6 +1060,10 @@
             document.getElementById('moneyDisplay').innerText = game.money + ' ¢';
             document.getElementById('dirDisplay').innerText = DIRS[game.currentDir].name + ' (' + DIRS[game.currentDir].symbol + ')';
             
+            let pDisplay = document.getElementById('powerDisplay');
+            pDisplay.innerText = `${game.power.produced} / ${game.power.consumed} W`;
+            pDisplay.className = `stat-value ${game.power.efficiency < 1.0 ? 'power-low' : 'power-ok'}`;
+
             let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
             document.getElementById('coordsDisplay').innerText = `X:${gx}, Y:${gy} | Zoom: ${Math.round(game.zoom*100)}%`;
 
@@ -1082,10 +1075,7 @@
                 let pct = Math.min((game.missionProgress / cm.req) * 100, 100);
                 document.getElementById('missionBar').style.width = pct + '%';
                 document.getElementById('missionText').innerText = game.missionProgress + ' / ' + cm.req;
-            } else {
-                document.getElementById('missionBar').style.width = '100%';
-                document.getElementById('missionText').innerText = "∞";
-            }
+            } else { document.getElementById('missionBar').style.width = '100%'; document.getElementById('missionText').innerText = "∞"; }
 
             document.getElementById('btn-tunnel').style.display = isUnlocked('tunnel') ? 'flex' : 'none';
             document.getElementById('btn-splitter').style.display = isUnlocked('splitter') ? 'flex' : 'none';
@@ -1094,6 +1084,11 @@
             document.getElementById('btn-assembler').style.display = isUnlocked('assembler') ? 'flex' : 'none';
             document.getElementById('btn-integrator').style.display = isUnlocked('integrator') ? 'flex' : 'none';
             document.getElementById('btn-trash').style.display = isUnlocked('trash') ? 'flex' : 'none';
+            
+            let showSec = isUnlocked('generator');
+            document.getElementById('btn-generator').style.display = showSec ? 'flex' : 'none';
+            document.getElementById('btn-firewall').style.display = showSec ? 'flex' : 'none';
+            document.getElementById('hr-security').style.display = showSec ? 'block' : 'none';
         }
 
         function setBuildMode(mode) {
@@ -1107,21 +1102,17 @@
             else if(mode === 'delete') document.querySelectorAll('.btn')[document.querySelectorAll('.btn').length - 1].classList.add('active');
         }
 
-        // --- CONTROLES ---
         window.addEventListener('keydown', (e) => {
             game.keys[e.key.toLowerCase()] = true; game.keys[e.key] = true; 
             if (e.key.toLowerCase() === 'r') { game.currentDir = (game.currentDir + 1) % 4; updateUI(); }
             if (e.key === 'Escape') {
-                let upgMod = document.getElementById('upgrade-modal');
-                let sortMod = document.getElementById('sorter-modal');
-                
+                let upgMod = document.getElementById('upgrade-modal'); let sortMod = document.getElementById('sorter-modal');
                 if (upgMod.style.display === 'block') { upgMod.style.display = 'none'; }
                 else if (sortMod.style.display === 'block') { sortMod.style.display = 'none'; }
                 else {
                     let bs = document.getElementById('boss-screen');
                     if(bs.style.display !== 'block') {
-                        let now = new Date();
-                        document.getElementById('fake-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+                        document.getElementById('fake-time').innerText = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
                         bs.style.display = 'block';
                     } else bs.style.display = 'none';
                 }
@@ -1137,6 +1128,8 @@
             if(e.key === '8') setBuildMode('assembler');
             if(e.key === '9') setBuildMode('integrator');
             if(e.key === '0') setBuildMode('trash');
+            if(e.key.toLowerCase() === 'g') setBuildMode('generator');
+            if(e.key.toLowerCase() === 'f') setBuildMode('firewall');
             if(e.key.toLowerCase() === 'x') setBuildMode('delete');
         });
         
@@ -1148,9 +1141,7 @@
             }
             game.lastMouse.x = e.clientX; game.lastMouse.y = e.clientY;
             game.mouseX = e.clientX; game.mouseY = e.clientY;
-            
-            game.worldX = (e.clientX - game.camera.x) / game.zoom; 
-            game.worldY = (e.clientY - game.camera.y) / game.zoom;
+            game.worldX = (e.clientX - game.camera.x) / game.zoom; game.worldY = (e.clientY - game.camera.y) / game.zoom;
             
             if (game.paintButton !== null && game.paintButton !== 1 && game.buildMode !== 'pan' && game.buildMode !== 'cursor') {
                 let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
@@ -1160,50 +1151,29 @@
         });
 
         canvas.addEventListener('mousedown', (e) => {
-            // Empêche les interactions avec le jeu si on clique sur un menu
             if (e.target.closest('.modal')) return;
-            
             game.lastMouse.x = e.clientX; game.lastMouse.y = e.clientY; game.paintButton = e.button; 
             if (e.button === 1) e.preventDefault(); 
-            
             let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
-            
-            // Interaction avec le Trieur (Mode Inspecteur)
             if (game.buildMode === 'cursor' && e.button === 0) {
                 if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight) {
                     let tile = game.grid[gx][gy];
-                    if (tile.building && tile.building.type === 'sorter') {
-                        openSorterConfig(gx, gy);
-                        return; // Stoppe ici pour ne pas dessiner
-                    }
+                    if (tile.building && tile.building.type === 'sorter') { openSorterConfig(gx, gy); return; }
                 }
             }
-
-            if (game.buildMode !== 'pan' && e.button !== 1) {
-                tryBuild(gx, gy, e.button === 2);
-            }
+            if (game.buildMode !== 'pan' && e.button !== 1) tryBuild(gx, gy, e.button === 2);
         });
 
         canvas.addEventListener('wheel', (e) => {
             if (document.getElementById('boss-screen').style.display === 'block') return;
             if (document.getElementById('upgrade-modal').style.display === 'block') return;
             if (document.getElementById('sorter-modal').style.display === 'block') return;
-            
             e.preventDefault(); 
-            
-            let wx = (e.clientX - game.camera.x) / game.zoom;
-            let wy = (e.clientY - game.camera.y) / game.zoom;
-            
+            let wx = (e.clientX - game.camera.x) / game.zoom; let wy = (e.clientY - game.camera.y) / game.zoom;
             let zoomSpeed = 0.1;
-            if (e.deltaY < 0) game.zoom = Math.min(2.5, game.zoom + zoomSpeed);
-            else game.zoom = Math.max(0.4, game.zoom - zoomSpeed);
-            
-            game.camera.x = e.clientX - wx * game.zoom;
-            game.camera.y = e.clientY - wy * game.zoom;
-            
-            game.worldX = (e.clientX - game.camera.x) / game.zoom; 
-            game.worldY = (e.clientY - game.camera.y) / game.zoom;
-            
+            if (e.deltaY < 0) game.zoom = Math.min(2.5, game.zoom + zoomSpeed); else game.zoom = Math.max(0.4, game.zoom - zoomSpeed);
+            game.camera.x = e.clientX - wx * game.zoom; game.camera.y = e.clientY - wy * game.zoom;
+            game.worldX = (e.clientX - game.camera.x) / game.zoom; game.worldY = (e.clientY - game.camera.y) / game.zoom;
             updateUI();
         }, {passive: false});
 
@@ -1226,13 +1196,9 @@
 
         // --- DEMARRAGE ---
         window.addEventListener('resize', resize);
-        generateFakeData(); 
-        resize(); 
-        
+        generateFakeData(); resize(); 
         if (!loadGame()) initGrid();
-        
-        updateUI(); 
-        gameLoop();
+        calculatePower(); updateUI(); gameLoop();
     </script>
 </body>
 </html>
