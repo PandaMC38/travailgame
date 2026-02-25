@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiNode - Dashboard</title>
+    <style>
+        /* Styles de base - Thème sombre "IDE / Dashboard" */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e24;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* Pas de scroll */
+            user-select: none; /* Empêche la sélection de texte accidentelle en cliquant */
+        }
+
+        /* Interface Utilisateur (UI) */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none; /* Laisse passer les clics vers le canvas sauf sur les boutons */
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .panel {
+            background: rgba(43, 43, 54, 0.9);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            pointer-events: auto; /* Réactive les clics pour les panneaux */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        h1 { margin: 0 0 10px 0; font-size: 1.2rem; color: #4db8ff; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .stats { font-size: 1.5rem; font-weight: bold; color: #ffeb3b; margin-bottom: 15px;}
+        
+        .toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover { background: #444; border-color: #777; }
+        .btn.active { background: #4db8ff; color: #000; border-color: #fff; font-weight: bold;}
+        
+        .shortcut {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            float: right;
+        }
+
+        /* Le Canvas du jeu */
+        #gameCanvas {
+            display: block;
+        }
+
+        /* Faux écran de travail (Boss Key) */
+        #boss-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff;
+            color: #333;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .fake-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .fake-table th, .fake-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        .fake-table th { background: #f0f0f0; }
+
+        .tutorial {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-top: 15px;
+            max-width: 250px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Faux écran de travail -->
+    <div id="boss-screen">
+        <h2>Rapport d'Analyse des Flux Q3</h2>
+        <table class="fake-table">
+            <thead>
+                <tr><th>ID Transaction</th><th>Date</th><th>Statut</th><th>Volume (kO)</th><th>Serveur Cible</th></tr>
+            </thead>
+            <tbody id="fake-table-body">
+                <!-- Rempli par JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Interface du jeu -->
+    <div id="ui-layer">
+        <div class="panel">
+            <h1>LogiNode v1.0</h1>
+            <div class="stats">Crédits: <span id="moneyDisplay">150</span> ¢</div>
+            
+            <div class="toolbar">
+                <button class="btn active" onclick="setBuildMode('cursor')">
+                    <span style="width:15px;height:15px;background:#ccc;border-radius:50%;display:inline-block;"></span>
+                    Curseur (Inspecter)
+                </button>
+                <button class="btn" onclick="setBuildMode('miner')">
+                    <span style="width:15px;height:15px;background:#e74c3c;display:inline-block;"></span>
+                    Extracteur (-50¢)
+                </button>
+                <button class="btn" onclick="setBuildMode('belt')">
+                    <span style="width:15px;height:15px;background:#95a5a6;display:inline-block;position:relative;">
+                        <span style="position:absolute;top:2px;left:5px;font-size:10px;color:#000;">↑</span>
+                    </span>
+                    Convoyeur (-10¢) <span class="shortcut">R</span>
+                </button>
+                <button class="btn" onclick="setBuildMode('delete')">
+                    <span style="width:15px;height:15px;background:repeating-linear-gradient(45deg, #000, #000 2px, #f39c12 2px, #f39c12 4px);display:inline-block;"></span>
+                    Démolir (Clic droit)
+                </button>
+            </div>
+
+            <div class="tutorial">
+                <strong>Objectif:</strong> Acheminez les paquets bleus (Ressources) vers le Noyau Central (Jaune).<br><br>
+                1. Placez un extracteur sur un nœud bleu.<br>
+                2. Reliez-le au noyau avec des convoyeurs.<br>
+                3. Appuyez sur <strong>[R]</strong> pour pivoter les convoyeurs.<br>
+                <br>
+                🚨 <strong>Touche [ÉCHAP] pour cacher le jeu.</strong>
+            </div>
+        </div>
+        
+        <div class="panel" style="height: fit-content;">
+            <div style="font-size: 0.9rem; color: #888;">
+                Direction actuelle Convoyeur:<br>
+                <strong id="dirDisplay" style="color: #fff; font-size: 1.2rem;">HAUT (↑)</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone de rendu -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // --- CONSTANTES ET CONFIGURATION ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const TILE_SIZE = 40;
+        
+        // Directions: 0=Haut, 1=Droite, 2=Bas, 3=Gauche
+        const DIRS = [
+            { x: 0, y: -1, symbol: '↑', name: 'HAUT' },
+            { x: 1, y: 0, symbol: '→', name: 'DROITE' },
+            { x: 0, y: 1, symbol: '↓', name: 'BAS' },
+            { x: -1, y: 0, symbol: '←', name: 'GAUCHE' }
+        ];
+
+        // --- ETAT DU JEU ---
+        const game = {
+            money: 150,
+            gridWidth: 0,
+            gridHeight: 0,
+            grid: [],    // Stocke les ressources et bâtiments
+            items: [],   // Stocke les ressources en mouvement
+            
+            // État de l'interface
+            buildMode: 'cursor', // cursor, miner, belt, delete
+            currentDir: 0,       // Direction pour les convoyeurs
+            mouseX: 0,
+            mouseY: 0,
+            
+            // Temps pour les animations
+            tick: 0,
+            
+            // Noyau (Base)
+            core: { x: 0, y: 0 }
+        };
+
+        // --- CLASSES ---
+
+        class Tile {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.resource = null; // 'node'
+                this.building = null; // { type: 'miner'|'belt'|'core', dir: 0-3 }
+            }
+        }
+
+        class Item {
+            constructor(startX, startY) {
+                this.x = startX;
+                this.y = startY;
+                this.progress = 0; // De 0 à 1 vers la prochaine tuile
+                this.gridX = startX;
+                this.gridY = startY;
+                this.movingDir = -1; // Direction actuelle de mouvement
+            }
+        }
+
+        // --- INITIALISATION ---
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            game.gridWidth = Math.ceil(canvas.width / TILE_SIZE);
+            game.gridHeight = Math.ceil(canvas.height / TILE_SIZE);
+            
+            // Centrer le noyau si c'est le début
+            if (game.core.x === 0 && game.core.y === 0) {
+                initGrid();
+            }
+        }
+
+        function initGrid() {
+            game.grid = [];
+            for (let x = 0; x < game.gridWidth; x++) {
+                game.grid[x] = [];
+                for (let y = 0; y < game.gridHeight; y++) {
+                    game.grid[x][y] = new Tile(x, y);
+                }
+            }
+
+            // Placer le Noyau au centre
+            game.core.x = Math.floor(game.gridWidth / 2);
+            game.core.y = Math.floor(game.gridHeight / 2);
+            game.grid[game.core.x][game.core.y].building = { type: 'core' };
+
+            // Générer des gisements aléatoires
+            let nodesPlaced = 0;
+            while(nodesPlaced < 15) {
+                let rx = Math.floor(Math.random() * game.gridWidth);
+                let ry = Math.floor(Math.random() * game.gridHeight);
+                // Ne pas placer sur le noyau ou trop près
+                let dist = Math.abs(rx - game.core.x) + Math.abs(ry - game.core.y);
+                if (dist > 3 && !game.grid[rx][ry].resource) {
+                    game.grid[rx][ry].resource = 'node';
+                    nodesPlaced++;
+                }
+            }
+        }
+
+        // --- LOGIQUE METIER (MISE A JOUR) ---
+
+        function update() {
+            game.tick++;
+
+            // 1. Les Extracteurs minent
+            if (game.tick % 60 === 0) { // Environ chaque seconde
+                for (let x = 0; x < game.gridWidth; x++) {
+                    for (let y = 0; y < game.gridHeight; y++) {
+                        let tile = game.grid[x][y];
+                        if (tile.building && tile.building.type === 'miner' && tile.resource === 'node') {
+                            // Cherche si un item est déjà sur la case pour éviter l'empilement infini
+                            let itemOnTile = game.items.find(i => Math.round(i.x) === x && Math.round(i.y) === y);
+                            if (!itemOnTile) {
+                                game.items.push(new Item(x, y));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Mouvement des items
+            for (let i = game.items.length - 1; i >= 0; i--) {
+                let item = game.items[i];
+                let currentTile = game.grid[item.gridX] && game.grid[item.gridX][item.gridY];
+
+                if (!currentTile) continue;
+
+                // Si l'item est parfaitement centré sur la tuile
+                if (item.progress === 0) {
+                    if (currentTile.building) {
+                        if (currentTile.building.type === 'core') {
+                            // Item livré !
+                            game.money += 15;
+                            updateUI();
+                            game.items.splice(i, 1);
+                            continue;
+                        } else if (currentTile.building.type === 'belt') {
+                            item.movingDir = currentTile.building.dir;
+                        } else if (currentTile.building.type === 'miner') {
+                             // L'extracteur pousse l'item vers le convoyeur adjacent s'il y en a un
+                             let pushed = false;
+                             for(let d=0; d<4; d++) {
+                                 let nx = item.gridX + DIRS[d].x;
+                                 let ny = item.gridY + DIRS[d].y;
+                                 if(game.grid[nx] && game.grid[nx][ny] && game.grid[nx][ny].building && game.grid[nx][ny].building.type === 'belt') {
+                                    item.movingDir = d;
+                                    pushed = true;
+                                    break;
+                                 }
+                             }
+                             if(!pushed) item.movingDir = -1; // Bloqué
+                        } else {
+                            item.movingDir = -1; // Autre bâtiment, bloqué
+                        }
+                    } else {
+                        item.movingDir = -1; // Pas de bâtiment, bloqué
+                    }
+                }
+
+                // Déplacer l'item
+                if (item.movingDir !== -1) {
+                    const speed = 0.05; // Vitesse de déplacement
+                    item.progress += speed;
+                    
+                    // Calcul de la position visuelle interpolée
+                    item.x = item.gridX + DIRS[item.movingDir].x * item.progress;
+                    item.y = item.gridY + DIRS[item.movingDir].y * item.progress;
+
+                    // A-t-il atteint la tuile suivante ?
+                    if (item.progress >= 1) {
+                        item.gridX += DIRS[item.movingDir].x;
+                        item.gridY += DIRS[item.movingDir].y;
+                        item.x = item.gridX;
+                        item.y = item.gridY;
+                        item.progress = 0;
+                        item.movingDir = -1; // Recalcul au prochain frame
+                    }
+                }
+            }
+        }
+
+        // --- RENDU VISUEL ---
+
+        function draw() {
+            // Fond
+            ctx.fillStyle = '#1e1e24';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dessiner la grille (lignes discrètes)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= canvas.width; x += TILE_SIZE) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += TILE_SIZE) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            // Dessiner les entités de la grille
+            for (let x = 0; x < game.gridWidth; x++) {
+                for (let y = 0; y < game.gridHeight; y++) {
+                    let tile = game.grid[x][y];
+                    let px = x * TILE_SIZE;
+                    let py = y * TILE_SIZE;
+
+                    // Ressource (Nœud)
+                    if (tile.resource === 'node') {
+                        ctx.fillStyle = '#2980b9'; // Bleu
+                        ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+                        // Petits détails pour faire "gisement"
+                        ctx.fillStyle = '#3498db';
+                        ctx.fillRect(px + 8, py + 8, 10, 10);
+                        ctx.fillRect(px + 20, py + 15, 8, 8);
+                    }
+
+                    // Bâtiments
+                    if (tile.building) {
+                        if (tile.building.type === 'core') {
+                            ctx.fillStyle = '#f1c40f'; // Jaune
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                            ctx.fillStyle = '#000';
+                            ctx.font = 'bold 20px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('CORE', px + TILE_SIZE/2, py + TILE_SIZE/2);
+                        } 
+                        else if (tile.building.type === 'belt') {
+                            ctx.fillStyle = '#34495e'; // Gris foncé
+                            ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                            
+                            // Dessiner les flèches du convoyeur (animation)
+                            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                            ctx.save();
+                            ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2);
+                            ctx.rotate(tile.building.dir * Math.PI / 2); // 0, 90, 180, 270 deg
+                            
+                            // Effet de mouvement de la bande
+                            let offset = (game.tick % 20) / 20 * 10;
+                            ctx.font = '16px Arial';
+                            ctx.fillText('↑', 0, -5 + offset);
+                            ctx.fillText('↑', 0, 10 + offset);
+                            
+                            ctx.restore();
+                        }
+                        else if (tile.building.type === 'miner') {
+                            ctx.fillStyle = '#e74c3c'; // Rouge
+                            // Forme octogonale/industrielle simple
+                            ctx.beginPath();
+                            ctx.moveTo(px + 10, py); ctx.lineTo(px + TILE_SIZE - 10, py);
+                            ctx.lineTo(px + TILE_SIZE, py + 10); ctx.lineTo(px + TILE_SIZE, py + TILE_SIZE - 10);
+                            ctx.lineTo(px + TILE_SIZE - 10, py + TILE_SIZE); ctx.lineTo(px + 10, py + TILE_SIZE);
+                            ctx.lineTo(px, py + TILE_SIZE - 10); ctx.lineTo(px, py + 10);
+                            ctx.fill();
+
+                            // Partie animée au centre
+                            ctx.fillStyle = '#c0392b';
+                            ctx.beginPath();
+                            ctx.arc(px + TILE_SIZE/2, py + TILE_SIZE/2, 10 + Math.sin(game.tick * 0.1) * 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+
+            // Dessiner les items
+            ctx.fillStyle = '#00d2ff'; // Cyan fluo pour bien les voir
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#00d2ff';
+            for (let item of game.items) {
+                let px = item.x * TILE_SIZE + TILE_SIZE / 2;
+                let py = item.y * TILE_SIZE + TILE_SIZE / 2;
+                ctx.beginPath();
+                ctx.arc(px, py, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0; // Reset
+
+            // Dessiner le curseur fantôme (Prévisualisation)
+            let gx = Math.floor(game.mouseX / TILE_SIZE);
+            let gy = Math.floor(game.mouseY / TILE_SIZE);
+            
+            if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+                if (game.buildMode !== 'cursor' && game.buildMode !== 'delete') {
+                    ctx.globalAlpha = 0.5;
+                    let px = gx * TILE_SIZE;
+                    let py = gy * TILE_SIZE;
+                    
+                    if (game.buildMode === 'belt') {
+                        ctx.fillStyle = '#34495e';
+                        ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                        ctx.fillStyle = '#fff';
+                        ctx.save();
+                        ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2);
+                        ctx.rotate(game.currentDir * Math.PI / 2);
+                        ctx.fillText('↑', 0, 0);
+                        ctx.restore();
+                    } else if (game.buildMode === 'miner') {
+                        ctx.fillStyle = '#e74c3c';
+                        ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+                    }
+                    ctx.globalAlpha = 1.0;
+                }
+            }
+        }
+
+        // --- BOUCLE PRINCIPALE ---
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- INTERACTIONS UI & SOURIS ---
+
+        function updateUI() {
+            document.getElementById('moneyDisplay').innerText = game.money;
+            document.getElementById('dirDisplay').innerText = DIRS[game.currentDir].name + ' (' + DIRS[game.currentDir].symbol + ')';
+        }
+
+        function setBuildMode(mode) {
+            game.buildMode = mode;
+            // Met à jour les boutons visuellement
+            document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+            // Hack simple pour retrouver le bon bouton
+            let index = ['cursor', 'miner', 'belt', 'delete'].indexOf(mode);
+            document.querySelectorAll('.btn')[index].classList.add('active');
+        }
+
+        // Gestion de la souris
+        canvas.addEventListener('mousemove', (e) => {
+            game.mouseX = e.clientX;
+            game.mouseY = e.clientY;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            let gx = Math.floor(e.clientX / TILE_SIZE);
+            let gy = Math.floor(e.clientY / TILE_SIZE);
+            
+            if (gx < 0 || gx >= game.gridWidth || gy < 0 || gy >= game.gridHeight) return;
+
+            let tile = game.grid[gx][gy];
+            let isRightClick = e.button === 2;
+
+            // Mode Démolition (ou Clic Droit)
+            if (game.buildMode === 'delete' || isRightClick) {
+                if (tile.building && tile.building.type !== 'core') {
+                    tile.building = null;
+                }
+                return;
+            }
+
+            // Mode Construction
+            if (game.buildMode === 'miner') {
+                if (game.money >= 50 && tile.resource === 'node' && !tile.building) {
+                    game.money -= 50;
+                    tile.building = { type: 'miner' };
+                }
+            } 
+            else if (game.buildMode === 'belt') {
+                if (game.money >= 10 && !tile.building) {
+                    game.money -= 10;
+                    tile.building = { type: 'belt', dir: game.currentDir };
+                }
+            }
+            
+            updateUI();
+        });
+
+        // Empêche le menu contextuel du clic droit sur le canvas
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Gestion du clavier (Rotation et Boss Key)
+        window.addEventListener('keydown', (e) => {
+            // Touche R pour pivoter
+            if (e.key === 'r' || e.key === 'R') {
+                game.currentDir = (game.currentDir + 1) % 4;
+                updateUI();
+            }
+            
+            // Touche Echap pour le Boss Key
+            if (e.key === 'Escape') {
+                let bossScreen = document.getElementById('boss-screen');
+                if (bossScreen.style.display === 'block') {
+                    bossScreen.style.display = 'none'; // Reprendre le jeu
+                } else {
+                    bossScreen.style.display = 'block'; // Cacher le jeu
+                }
+            }
+            
+            // Raccourcis numériques
+            if(e.key === '1') setBuildMode('cursor');
+            if(e.key === '2') setBuildMode('miner');
+            if(e.key === '3') setBuildMode('belt');
+            if(e.key === '4') setBuildMode('delete');
+        });
+
+        // Générer de fausses données pour le Boss Key
+        function generateFakeData() {
+            let tbody = document.getElementById('fake-table-body');
+            let html = '';
+            for(let i=0; i<15; i++) {
+                let id = 'TX-' + Math.floor(Math.random() * 90000 + 10000);
+                let statuts = ['Terminé', 'En cours', 'En attente', 'Vérification'];
+                let statut = statuts[Math.floor(Math.random()*statuts.length)];
+                let vol = (Math.random() * 500).toFixed(2);
+                let srv = 'SRV-0' + Math.floor(Math.random() * 9 + 1);
+                html += `<tr><td>${id}</td><td>Aujourd'hui</td><td>${statut}</td><td>${vol}</td><td>${srv}</td></tr>`;
+            }
+            tbody.innerHTML = html;
+        }
+
+        // Lancement
+        window.addEventListener('resize', resize);
+        generateFakeData();
+        resize();
+        updateUI();
+        gameLoop();
+
+    </script>
+</body>
+</html>
