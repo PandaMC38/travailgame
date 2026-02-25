@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiNode - Dashboard System V7</title>
+    <title>LogiNode - Dashboard System V8</title>
     <style>
         /* Styles de base - Thème sombre "IDE / Dashboard" */
         body {
@@ -30,8 +30,9 @@
         .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         h1 { margin: 0; font-size: 1.1rem; color: #4db8ff; text-transform: uppercase; letter-spacing: 1px; }
         
-        .sys-btn { background: #333; color: #aaa; border: 1px solid #555; border-radius: 4px; padding: 3px 8px; font-size: 0.7rem; cursor: pointer; }
-        .sys-btn:hover { background: #e74c3c; color: #fff; border-color: #fff; }
+        .sys-btn { background: #333; color: #aaa; border: 1px solid #555; border-radius: 4px; padding: 4px 10px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        .sys-btn:hover { background: #4db8ff; color: #000; border-color: #fff; }
+        .sys-btn.danger:hover { background: #e74c3c; color: #fff; border-color: #fff; }
 
         /* Dashboard Stats */
         .dashboard-grid {
@@ -52,10 +53,10 @@
             transition: all 0.3s ease;
         }
         
-        .toolbar { display: flex; flex-direction: column; gap: 6px; }
+        .toolbar { display: flex; flex-direction: column; gap: 5px; }
 
         .btn {
-            background: #23232b; color: #ddd; border: 1px solid #444; padding: 7px 10px;
+            background: #23232b; color: #ddd; border: 1px solid #444; padding: 6px 10px;
             border-radius: 4px; cursor: pointer; transition: all 0.1s;
             text-align: left; font-size: 0.8rem; display: flex; align-items: center; gap: 8px;
         }
@@ -77,7 +78,7 @@
         .fake-table th, .fake-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
         .fake-table th { background: #f4f4f4; color: #555;}
 
-        .tutorial { font-size: 0.75rem; color: #999; margin-top: 15px; line-height: 1.4; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;}
+        .tutorial { font-size: 0.7rem; color: #999; margin-top: 15px; line-height: 1.4; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;}
         .tutorial strong { color: #fff; }
 
         /* Notifications */
@@ -87,6 +88,25 @@
             border-radius: 20px; font-size: 0.9rem; font-weight: bold;
             opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
         }
+
+        /* Modal Upgrades */
+        #upgrade-modal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(26, 26, 32, 0.98); border: 2px solid #4db8ff; border-radius: 8px;
+            padding: 25px; z-index: 50; width: 450px; box-shadow: 0 0 40px rgba(0,0,0,0.9);
+            pointer-events: auto;
+        }
+        #upgrade-modal h2 { margin-top: 0; color: #4db8ff; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .upg-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 6px; border: 1px solid #333;}
+        .upg-info { flex-grow: 1; }
+        .upg-title { font-weight: bold; font-size: 1rem; color: #fff; margin-bottom: 4px; }
+        .upg-desc { font-size: 0.75rem; color: #aaa; }
+        .upg-lvl { color: #f39c12; font-size: 0.8rem; font-weight: bold; margin-top: 4px; }
+        .upg-btn { background: #4db8ff; color: #000; padding: 8px 15px; border:none; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; min-width: 90px; text-align: center; }
+        .upg-btn:hover { background: #fff; }
+        .upg-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .close-modal { position: absolute; top: 10px; right: 15px; cursor: pointer; color: #aaa; font-size: 1.5rem; }
+        .close-modal:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -105,13 +125,49 @@
         </table>
     </div>
 
+    <!-- Modal Upgrades -->
+    <div id="upgrade-modal">
+        <span class="close-modal" onclick="toggleUpgrades()">&times;</span>
+        <h2>Centre de Recherche</h2>
+        
+        <div class="upg-row">
+            <div class="upg-info">
+                <div class="upg-title">Overclocking Extracteurs</div>
+                <div class="upg-desc">Augmente la vitesse de minage de toutes les foreuses.</div>
+                <div class="upg-lvl" id="lvl-miner">Niveau: 0/5</div>
+            </div>
+            <button class="upg-btn" id="btn-upg-miner" onclick="buyUpgrade('miner')">500 ¢</button>
+        </div>
+        
+        <div class="upg-row">
+            <div class="upg-info">
+                <div class="upg-title">Moteurs Magnétiques</div>
+                <div class="upg-desc">Augmente la vitesse de déplacement sur les convoyeurs.</div>
+                <div class="upg-lvl" id="lvl-belt">Niveau: 0/5</div>
+            </div>
+            <button class="upg-btn" id="btn-upg-belt" onclick="buyUpgrade('belt')">500 ¢</button>
+        </div>
+        
+        <div class="upg-row">
+            <div class="upg-info">
+                <div class="upg-title">Négociation de Flux</div>
+                <div class="upg-desc">Augmente le prix de revente au Core (+50% par niveau).</div>
+                <div class="upg-lvl" id="lvl-value">Niveau: 0/5</div>
+            </div>
+            <button class="upg-btn" id="btn-upg-value" onclick="buyUpgrade('value')">1000 ¢</button>
+        </div>
+    </div>
+
     <!-- Interface du jeu -->
     <div id="ui-layer">
         <div class="panel-container">
             <div class="panel">
                 <div class="header-flex">
-                    <h1>LogiNode v7.0</h1>
-                    <button class="sys-btn" onclick="resetGame()" title="Effacer la sauvegarde et recommencer">RESET</button>
+                    <h1>LogiNode v8.0</h1>
+                    <div>
+                        <button class="sys-btn" onclick="toggleUpgrades()" style="margin-right: 5px; background: #2980b9; color:#fff; border-color:#3498db;">UPGRADES</button>
+                        <button class="sys-btn danger" onclick="resetGame()" title="Effacer la sauvegarde">RESET</button>
+                    </div>
                 </div>
                 
                 <div class="dashboard-grid">
@@ -164,21 +220,25 @@
                         <span style="width:12px;height:12px;background:#1abc9c;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">Y</span>
                         Répartiteur <span style="color:#aaa;font-size:0.7rem;">(50¢)</span> <span class="shortcut">5</span>
                     </button>
+                    <button class="btn" onclick="setBuildMode('sorter')" id="btn-sorter" style="display:none;">
+                        <span style="width:12px;height:12px;background:#3498db;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;">S</span>
+                        Trieur <span style="color:#aaa;font-size:0.7rem;">(200¢)</span> <span class="shortcut">6</span>
+                    </button>
                     <button class="btn" onclick="setBuildMode('upgrader')" id="btn-upgrader" style="display:none;">
                         <span style="width:12px;height:12px;background:#e67e22;display:inline-block;"></span>
-                        Traitement <span style="color:#aaa;font-size:0.7rem;">(100¢)</span> <span class="shortcut">6</span>
+                        Traitement <span style="color:#aaa;font-size:0.7rem;">(100¢)</span> <span class="shortcut">7</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('assembler')" id="btn-assembler" style="display:none;">
                         <span style="width:12px;height:12px;background:#8e44ad;display:inline-block;"></span>
-                        Assembleur <span style="color:#aaa;font-size:0.7rem;">(300¢)</span> <span class="shortcut">7</span>
+                        Assembleur <span style="color:#aaa;font-size:0.7rem;">(300¢)</span> <span class="shortcut">8</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('integrator')" id="btn-integrator" style="display:none;">
                         <span style="width:12px;height:12px;background:#ecf0f1;display:inline-block;border:1px solid #333;"></span>
-                        Intégrateur <span style="color:#aaa;font-size:0.7rem;">(500¢)</span> <span class="shortcut">8</span>
+                        Intégrateur <span style="color:#aaa;font-size:0.7rem;">(500¢)</span> <span class="shortcut">9</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('trash')" id="btn-trash" style="display:none;">
                         <span style="width:12px;height:12px;background:#c0392b;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;">🗑</span>
-                        /dev/null <span style="color:#aaa;font-size:0.7rem;">(20¢)</span> <span class="shortcut">9</span>
+                        /dev/null <span style="color:#aaa;font-size:0.7rem;">(20¢)</span> <span class="shortcut">0</span>
                     </button>
                     
                     <hr style="border-color:#333; width:100%; margin: 2px 0;">
@@ -190,10 +250,9 @@
                 </div>
 
                 <div class="tutorial">
-                    <strong>Nouveautés V7 :</strong><br>
-                    - 🔍 <strong>Zoom:</strong> Utilisez la molette de la souris.<br>
-                    - 🗺️ <strong>Minimap:</strong> Radar visible en bas à droite.<br>
-                    - 🗑️ <strong>/dev/null:</strong> Détruit les ressources bloquantes.<br>
+                    <strong>Nouveautés V8 :</strong><br>
+                    - 🚀 <strong>Upgrades:</strong> Bouton en haut. Achetez des améliorations permanentes.<br>
+                    - 🧠 <strong>Trieur (Sorter):</strong> Filtre les ressources selon sa direction. (Gauche: Bleu, Face: Orange, Droite: Autres).<br>
                     <br>🚨 <strong>Boss Key : [ÉCHAP]</strong>
                 </div>
             </div>
@@ -230,7 +289,14 @@
             grid: [],
             items: [],
             deliveries: [], 
-            particles: [], // Effets visuels (ex: +15¢)
+            particles: [],
+            
+            // Arbre de compétences (V8)
+            upgrades: {
+                miner: 0,  // Max 5
+                belt: 0,   // Max 5
+                value: 0   // Max 5
+            },
             
             // Progression et Missions
             missionIndex: 0,
@@ -238,16 +304,16 @@
             missions: [
                 { title: "Phase 1: Données Brutes", desc: "Acheminez 20 Flux Données (Bleu) au Core.", type: 'raw_blue', req: 20 },
                 { title: "Phase 2: Logistique", desc: "Acheminez 20 Flux Traités (Vert).\n<span style='color:#2ecc71'>Débloque: Traitement, Tunnel, Répartiteur & Poubelle.</span>", type: 'proc_blue', req: 20 },
-                { title: "Phase 3: Assemblage", desc: "Nouveaux gisements: Logique (Orange).\nTraitez-les (Jaune) et combinez (Vert+Jaune) dans l'Assembleur.\nLivrez 15 Composants (Violet).\n<span style='color:#2ecc71'>Débloque: Assembleur, Mine Orange.</span>", type: 'advanced_purple', req: 15 },
-                { title: "Phase 4: Intégration", desc: "Nouveaux gisements: Quantique (Rose).\nCombinez Violet + Rose dans l'Intégrateur.\nLivrez 10 Flux Omega (Blanc).\n<span style='color:#2ecc71'>Débloque: Intégrateur, Mine Rose.</span>", type: 'omega', req: 10 },
-                { title: "Phase 5: Infinie", desc: "Système optimisé. Maximisez les profits.", type: 'none', req: 0 }
+                { title: "Phase 3: Assemblage", desc: "Nouveaux gisements: Logique (Orange).\nTraitez-les (Jaune) et combinez (Vert+Jaune) dans l'Assembleur.\n<span style='color:#2ecc71'>Débloque: Assembleur, Mine Orange & Trieur Intelligent.</span>", type: 'advanced_purple', req: 15 },
+                { title: "Phase 4: Intégration", desc: "Nouveaux gisements: Quantique (Rose).\nCombinez Violet + Rose dans l'Intégrateur.\n<span style='color:#2ecc71'>Débloque: Intégrateur, Mine Rose.</span>", type: 'omega', req: 10 },
+                { title: "Phase 5: Infinie", desc: "Système optimisé. Maximisez les profits et améliorez l'usine.", type: 'none', req: 0 }
             ],
             
             buildMode: 'cursor',
             currentDir: 0,
             
             camera: { x: 0, y: 0 },
-            zoom: 1.0, // Niveau de zoom
+            zoom: 1.0,
             mouseX: 0, mouseY: 0,
             worldX: 0, worldY: 0,
             paintButton: null,
@@ -284,6 +350,49 @@
             }
         }
 
+        // --- GESTION DES UPGRADES (V8) ---
+        function getUpgradeCost(type) {
+            let lvl = game.upgrades[type];
+            if(lvl >= 5) return Infinity;
+            if(type === 'value') return 1000 * Math.pow(2, lvl);
+            return 500 * Math.pow(2, lvl);
+        }
+
+        function toggleUpgrades() {
+            let m = document.getElementById('upgrade-modal');
+            if (m.style.display === 'block') { m.style.display = 'none'; return; }
+            updateUpgradeUI();
+            m.style.display = 'block';
+        }
+
+        function updateUpgradeUI() {
+            ['miner', 'belt', 'value'].forEach(type => {
+                let lvl = game.upgrades[type];
+                let cost = getUpgradeCost(type);
+                document.getElementById(`lvl-${type}`).innerText = `Niveau: ${lvl}/5`;
+                
+                let btn = document.getElementById(`btn-upg-${type}`);
+                if (lvl >= 5) {
+                    btn.innerText = "MAX";
+                    btn.disabled = true;
+                } else {
+                    btn.innerText = cost + " ¢";
+                    btn.disabled = (game.money < cost);
+                }
+            });
+        }
+
+        function buyUpgrade(type) {
+            let cost = getUpgradeCost(type);
+            if (game.money >= cost && game.upgrades[type] < 5) {
+                game.money -= cost;
+                game.upgrades[type]++;
+                updateUpgradeUI();
+                updateUI();
+                saveGame();
+            }
+        }
+
         // --- SYSTEME DE SAUVEGARDE ---
         function saveGame() {
             let saveData = {
@@ -291,6 +400,7 @@
                 missionIndex: game.missionIndex,
                 missionProgress: game.missionProgress,
                 zoom: game.zoom,
+                upgrades: game.upgrades,
                 gridData: []
             };
             for(let x=0; x<game.gridWidth; x++) {
@@ -301,13 +411,14 @@
                     }
                 }
             }
-            localStorage.setItem('loginode_save_v7', JSON.stringify(saveData));
+            localStorage.setItem('loginode_save_v8', JSON.stringify(saveData));
             showNotification("Sauvegarde Automatique effectuée");
         }
 
         function loadGame() {
-            let saved = localStorage.getItem('loginode_save_v7');
-            // Migration possible depuis v6
+            let saved = localStorage.getItem('loginode_save_v8');
+            // Migration depuis v7 ou v6
+            if(!saved) saved = localStorage.getItem('loginode_save_v7'); 
             if(!saved) saved = localStorage.getItem('loginode_save_v6'); 
             
             if(saved) {
@@ -317,6 +428,7 @@
                     game.missionIndex = data.missionIndex || 0;
                     game.missionProgress = data.missionProgress || 0;
                     game.zoom = data.zoom || 1.0;
+                    if(data.upgrades) game.upgrades = data.upgrades;
                     
                     game.grid = [];
                     for (let x = 0; x < game.gridWidth; x++) {
@@ -343,6 +455,7 @@
 
         function resetGame() {
             if(confirm("Êtes-vous sûr de vouloir effacer votre sauvegarde et tout recommencer ?")) {
+                localStorage.removeItem('loginode_save_v8');
                 localStorage.removeItem('loginode_save_v7');
                 localStorage.removeItem('loginode_save_v6');
                 location.reload();
@@ -392,7 +505,7 @@
 
         function isUnlocked(mode) {
             if (['splitter', 'upgrader', 'tunnel', 'trash'].includes(mode)) return game.missionIndex >= 1;
-            if (mode === 'assembler') return game.missionIndex >= 2;
+            if (['assembler', 'sorter'].includes(mode)) return game.missionIndex >= 2;
             if (mode === 'integrator') return game.missionIndex >= 3;
             return true;
         }
@@ -409,7 +522,7 @@
             if (tile.building || game.buildMode === 'cursor' || game.buildMode === 'pan') return;
             if (!isUnlocked(game.buildMode)) return;
 
-            const costs = { 'miner': 50, 'belt': 10, 'upgrader': 100, 'assembler': 300, 'splitter': 50, 'integrator': 500, 'tunnel': 150, 'trash': 20 };
+            const costs = { 'miner': 50, 'belt': 10, 'upgrader': 100, 'assembler': 300, 'splitter': 50, 'sorter': 200, 'integrator': 500, 'tunnel': 150, 'trash': 20 };
             
             if (game.money >= costs[game.buildMode]) {
                 if (game.buildMode === 'miner') {
@@ -427,6 +540,7 @@
                 
                 tile.building = bData;
                 updateUI();
+                if(document.getElementById('upgrade-modal').style.display === 'block') updateUpgradeUI();
             }
         }
 
@@ -435,10 +549,7 @@
             if (document.getElementById('boss-screen').style.display === 'block') return;
             game.tick++;
 
-            // Auto-Save toutes les 10 secondes (600 ticks à 60fps)
-            if (game.tick > 0 && game.tick % 600 === 0) {
-                saveGame();
-            }
+            if (game.tick > 0 && game.tick % 600 === 0) saveGame();
 
             const camSpeed = 12;
             if (game.keys['ArrowUp'] || game.keys['z'] || game.keys['w']) game.camera.y += camSpeed;
@@ -446,8 +557,9 @@
             if (game.keys['ArrowLeft'] || game.keys['q'] || game.keys['a']) game.camera.x += camSpeed;
             if (game.keys['ArrowRight'] || game.keys['d']) game.camera.x -= camSpeed;
 
-            // 1. Minage
-            if (game.tick % 60 === 0) {
+            // 1. Minage (Affecté par l'upgrade Miner)
+            let minerInterval = Math.max(10, 60 - (game.upgrades.miner * 10)); 
+            if (game.tick % minerInterval === 0) {
                 for (let x = 0; x < game.gridWidth; x++) {
                     for (let y = 0; y < game.gridHeight; y++) {
                         let tile = game.grid[x][y];
@@ -464,7 +576,6 @@
                 }
             }
 
-            // Mise à jour des particules
             for(let i=game.particles.length-1; i>=0; i--) {
                 game.particles[i].life -= 1.5;
                 game.particles[i].y -= 0.5;
@@ -483,8 +594,10 @@
                         let b = currentTile.building;
                         
                         if (b.type === 'core') {
-                            const values = { 'raw_blue': 15, 'proc_blue': 40, 'raw_orange': 20, 'proc_orange': 50, 'advanced_purple': 200, 'raw_pink': 100, 'omega': 1000 };
-                            let val = values[item.type] || 0;
+                            const baseValues = { 'raw_blue': 15, 'proc_blue': 40, 'raw_orange': 20, 'proc_orange': 50, 'advanced_purple': 200, 'raw_pink': 100, 'omega': 1000 };
+                            // Bonus de valeur lié à l'upgrade (+50% par niveau)
+                            let val = Math.floor((baseValues[item.type] || 0) * (1 + (game.upgrades.value * 0.5)));
+                            
                             game.money += val;
                             game.deliveries.push(Date.now());
                             
@@ -508,6 +621,7 @@
                                 }
                             }
                             updateUI();
+                            if(document.getElementById('upgrade-modal').style.display === 'block') updateUpgradeUI();
                             game.items.splice(i, 1);
                             continue;
                         }
@@ -540,6 +654,16 @@
                             let dirRight = (b.dir + 1) % 4;
                             item.movingDir = b.toggle ? dirLeft : dirRight;
                             b.toggle = !b.toggle;
+                        }
+                        else if (b.type === 'sorter') {
+                            // TRIEUR INTELLIGENT (Nouveau V8)
+                            let dirLeft = (b.dir + 3) % 4;
+                            let dirRight = (b.dir + 1) % 4;
+                            let dirStraight = b.dir;
+                            
+                            if (item.type.includes('blue')) item.movingDir = dirLeft;
+                            else if (item.type.includes('orange')) item.movingDir = dirStraight;
+                            else item.movingDir = dirRight; // Pink, Purple, Omega
                         }
                         else if (b.type === 'upgrader') {
                             if (item.type === 'raw_blue') item.type = 'proc_blue';
@@ -584,7 +708,7 @@
                                  let nx = item.gridX + DIRS[d].x;
                                  let ny = item.gridY + DIRS[d].y;
                                  let adj = game.grid[nx] && game.grid[nx][ny];
-                                 if(adj && adj.building && ['belt', 'tunnel', 'upgrader', 'splitter', 'assembler', 'integrator', 'trash'].includes(adj.building.type)) {
+                                 if(adj && adj.building && ['belt', 'tunnel', 'upgrader', 'splitter', 'sorter', 'assembler', 'integrator', 'trash'].includes(adj.building.type)) {
                                     item.movingDir = d; pushed = true; break;
                                  }
                              }
@@ -594,8 +718,10 @@
                 }
 
                 if (item.movingDir !== -1) {
-                    const speeds = { 'raw_blue': 0.06, 'proc_blue': 0.05, 'raw_orange': 0.06, 'proc_orange': 0.05, 'advanced_purple': 0.04, 'raw_pink': 0.04, 'omega': 0.03 };
-                    item.progress += speeds[item.type] || 0.05;
+                    const baseSpeeds = { 'raw_blue': 0.06, 'proc_blue': 0.05, 'raw_orange': 0.06, 'proc_orange': 0.05, 'advanced_purple': 0.04, 'raw_pink': 0.04, 'omega': 0.03 };
+                    // Bonus de vitesse de convoyeur (+0.015 par niveau)
+                    let speedMod = game.upgrades.belt * 0.015;
+                    item.progress += (baseSpeeds[item.type] || 0.05) + speedMod;
                     
                     item.x = item.gridX + DIRS[item.movingDir].x * item.progress;
                     item.y = item.gridY + DIRS[item.movingDir].y * item.progress;
@@ -620,12 +746,10 @@
             ctx.fillStyle = '#1a1a20';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Appliquer la caméra et le zoom
             ctx.save(); 
             ctx.translate(game.camera.x, game.camera.y);
             ctx.scale(game.zoom, game.zoom);
 
-            // Grille infinie mais rendue uniquement là où c'est utile
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)'; 
             ctx.lineWidth = 1 / game.zoom;
             let startX = Math.max(0, Math.floor(-game.camera.x / (TILE_SIZE * game.zoom))); 
@@ -683,10 +807,10 @@
                         }
                         else if (b.type === 'tunnel') {
                             ctx.fillStyle = '#2c3e50'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-                            ctx.fillStyle = '#000'; // Trou sombre
+                            ctx.fillStyle = '#000'; 
                             ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
-                            ctx.fillRect(-12, -18, 24, 20); // Hatch at the "top"
-                            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-14, -20, 28, 6); // Metal border
+                            ctx.fillRect(-12, -18, 24, 20); 
+                            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-14, -20, 28, 6); 
                             ctx.restore();
                         }
                         else if (b.type === 'splitter') {
@@ -694,6 +818,16 @@
                             ctx.fillStyle = '#16a085'; ctx.fillRect(px + 10, py + 10, TILE_SIZE - 20, TILE_SIZE - 20);
                             ctx.fillStyle = '#fff'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
                             ctx.font = '12px Arial'; if(b.toggle) ctx.fillText('←', 0, -5); else ctx.fillText('→', 0, -5); ctx.restore();
+                        }
+                        else if (b.type === 'sorter') {
+                            ctx.fillStyle = '#3498db'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                            ctx.fillStyle = '#2980b9'; ctx.fillRect(px + 8, py + 8, TILE_SIZE - 16, TILE_SIZE - 16);
+                            ctx.fillStyle = '#fff'; ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(b.dir * Math.PI / 2);
+                            ctx.font = '10px Arial'; 
+                            ctx.fillStyle = '#2ecc71'; ctx.fillText('←', -10, 0); // Blue left
+                            ctx.fillStyle = '#f39c12'; ctx.fillText('↑', 0, -10); // Orange straight
+                            ctx.fillStyle = '#9b59b6'; ctx.fillText('→', 10, 0);  // Pink/Purple right
+                            ctx.restore();
                         }
                         else if (b.type === 'upgrader') {
                             ctx.fillStyle = '#e67e22'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
@@ -722,7 +856,6 @@
                 }
             }
 
-            // Dessin des Objets
             for (let item of game.items) {
                 if (item.x >= startX - 1 && item.x <= endX && item.y >= startY - 1 && item.y <= endY) {
                     let colors = {
@@ -744,7 +877,6 @@
             }
             ctx.shadowBlur = 0;
 
-            // Dessin des Particules (Textes de gain)
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 16px Arial';
             for (let p of game.particles) {
                 if (p.x/TILE_SIZE >= startX && p.x/TILE_SIZE <= endX && p.y/TILE_SIZE >= startY && p.y/TILE_SIZE <= endY) {
@@ -759,7 +891,7 @@
             if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight && !game.isMiddleDragging) {
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2 / game.zoom; ctx.strokeRect(gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-                if (['belt', 'miner', 'upgrader', 'splitter', 'assembler', 'integrator', 'tunnel', 'trash'].includes(game.buildMode)) {
+                if (['belt', 'miner', 'upgrader', 'splitter', 'sorter', 'assembler', 'integrator', 'tunnel', 'trash'].includes(game.buildMode)) {
                     ctx.globalAlpha = 0.5; let px = gx * TILE_SIZE; let py = gy * TILE_SIZE;
                     ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(game.currentDir * Math.PI / 2);
                     
@@ -768,6 +900,7 @@
                     else if (game.buildMode === 'trash') { ctx.fillStyle = '#c0392b'; ctx.fillRect(-16, -16, 32, 32); }
                     else if (game.buildMode === 'upgrader') { ctx.fillStyle = '#e67e22'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('↑', 0, 0); }
                     else if (game.buildMode === 'splitter') { ctx.fillStyle = '#1abc9c'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('Y', 0, 0); }
+                    else if (game.buildMode === 'sorter') { ctx.fillStyle = '#3498db'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.fillText('S', 0, 0); }
                     else if (game.buildMode === 'assembler') { ctx.fillStyle = '#8e44ad'; ctx.fillRect(-18, -18, 36, 36); }
                     else if (game.buildMode === 'integrator') { ctx.fillStyle = '#ecf0f1'; ctx.fillRect(-18, -18, 36, 36); }
                     else if (game.buildMode === 'miner') { ctx.fillStyle = '#e74c3c'; ctx.fillRect(-16, -16, 32, 32); }
@@ -775,9 +908,9 @@
                     ctx.restore(); ctx.globalAlpha = 1.0;
                 }
             }
-            ctx.restore(); // Fin du monde zoomé
+            ctx.restore();
 
-            // Rendu de la Minimap (Interface)
+            // Minimap
             let mapSize = 150;
             let mapX = canvas.width - mapSize - 20;
             let mapY = canvas.height - mapSize - 20;
@@ -807,11 +940,10 @@
                 }
             }
 
-            // Indicateur de caméra sur la minimap
             ctx.save();
             ctx.beginPath();
             ctx.rect(mapX, mapY, mapSize, mapSize);
-            ctx.clip(); // Pour ne pas dessiner l'indicateur hors du cadre de la minimap
+            ctx.clip(); 
             
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.lineWidth = 1;
@@ -848,6 +980,7 @@
 
             document.getElementById('btn-tunnel').style.display = isUnlocked('tunnel') ? 'flex' : 'none';
             document.getElementById('btn-splitter').style.display = isUnlocked('splitter') ? 'flex' : 'none';
+            document.getElementById('btn-sorter').style.display = isUnlocked('sorter') ? 'flex' : 'none';
             document.getElementById('btn-upgrader').style.display = isUnlocked('upgrader') ? 'flex' : 'none';
             document.getElementById('btn-assembler').style.display = isUnlocked('assembler') ? 'flex' : 'none';
             document.getElementById('btn-integrator').style.display = isUnlocked('integrator') ? 'flex' : 'none';
@@ -870,12 +1003,17 @@
             game.keys[e.key.toLowerCase()] = true; game.keys[e.key] = true; 
             if (e.key.toLowerCase() === 'r') { game.currentDir = (game.currentDir + 1) % 4; updateUI(); }
             if (e.key === 'Escape') {
-                let bs = document.getElementById('boss-screen');
-                if(bs.style.display !== 'block') {
-                    let now = new Date();
-                    document.getElementById('fake-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-                    bs.style.display = 'block';
-                } else bs.style.display = 'none';
+                let mod = document.getElementById('upgrade-modal');
+                if (mod.style.display === 'block') {
+                    mod.style.display = 'none';
+                } else {
+                    let bs = document.getElementById('boss-screen');
+                    if(bs.style.display !== 'block') {
+                        let now = new Date();
+                        document.getElementById('fake-time').innerText = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+                        bs.style.display = 'block';
+                    } else bs.style.display = 'none';
+                }
             }
             if(e.key === '1') setBuildMode('cursor');
             if(e.key.toLowerCase() === 'm') setBuildMode('pan');
@@ -883,10 +1021,11 @@
             if(e.key === '3') setBuildMode('belt');
             if(e.key === '4') setBuildMode('tunnel');
             if(e.key === '5') setBuildMode('splitter');
-            if(e.key === '6') setBuildMode('upgrader');
-            if(e.key === '7') setBuildMode('assembler');
-            if(e.key === '8') setBuildMode('integrator');
-            if(e.key === '9') setBuildMode('trash');
+            if(e.key === '6') setBuildMode('sorter');
+            if(e.key === '7') setBuildMode('upgrader');
+            if(e.key === '8') setBuildMode('assembler');
+            if(e.key === '9') setBuildMode('integrator');
+            if(e.key === '0') setBuildMode('trash');
             if(e.key.toLowerCase() === 'x') setBuildMode('delete');
         });
         
@@ -910,6 +1049,9 @@
         });
 
         canvas.addEventListener('mousedown', (e) => {
+            // Empêche la construction si on clique dans la modal d'upgrades
+            if (e.target.closest('#upgrade-modal')) return;
+            
             game.lastMouse.x = e.clientX; game.lastMouse.y = e.clientY; game.paintButton = e.button; 
             if (e.button === 1) e.preventDefault(); 
             if (game.buildMode !== 'pan' && e.button !== 1) {
@@ -918,9 +1060,9 @@
             }
         });
 
-        // Fonction Zoom
         canvas.addEventListener('wheel', (e) => {
             if (document.getElementById('boss-screen').style.display === 'block') return;
+            if (document.getElementById('upgrade-modal').style.display === 'block') return;
             e.preventDefault(); 
             
             let wx = (e.clientX - game.camera.x) / game.zoom;
@@ -930,11 +1072,9 @@
             if (e.deltaY < 0) game.zoom = Math.min(2.5, game.zoom + zoomSpeed);
             else game.zoom = Math.max(0.4, game.zoom - zoomSpeed);
             
-            // Réajuste la caméra pour zoomer vers la souris
             game.camera.x = e.clientX - wx * game.zoom;
             game.camera.y = e.clientY - wy * game.zoom;
             
-            // Recalcul des coordonnées mondiales
             game.worldX = (e.clientX - game.camera.x) / game.zoom; 
             game.worldY = (e.clientY - game.camera.y) / game.zoom;
             
@@ -963,10 +1103,7 @@
         generateFakeData(); 
         resize(); 
         
-        // Tente de charger une partie, sinon initialise une nouvelle grille
-        if (!loadGame()) {
-            initGrid();
-        }
+        if (!loadGame()) initGrid();
         
         updateUI(); 
         gameLoop();
