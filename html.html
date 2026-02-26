@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiNode - Dashboard System V13</title>
+    <title>LogiNode - Dashboard System V14</title>
     <style>
         /* Styles de base - Thème sombre "IDE / Dashboard" */
         body {
@@ -93,7 +93,7 @@
             opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
         }
 
-        /* Modals (Upgrades & Sorter) */
+        /* Modals */
         .modal {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(26, 26, 32, 0.98); border: 2px solid #4db8ff; border-radius: 8px;
@@ -105,11 +105,11 @@
         .close-modal:hover { color: #fff; }
 
         .upg-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 6px; border: 1px solid #333;}
-        .upg-info { flex-grow: 1; }
+        .upg-info { flex-grow: 1; padding-right: 15px;}
         .upg-title { font-weight: bold; font-size: 1rem; color: #fff; margin-bottom: 4px; }
         .upg-desc { font-size: 0.75rem; color: #aaa; }
         .upg-lvl { color: #f39c12; font-size: 0.8rem; font-weight: bold; margin-top: 4px; }
-        .upg-btn { background: #4db8ff; color: #000; padding: 8px 15px; border:none; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; min-width: 90px; text-align: center; }
+        .upg-btn { background: #4db8ff; color: #000; padding: 8px 15px; border:none; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; min-width: 100px; text-align: center; }
         .upg-btn:hover { background: #fff; }
         .upg-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
 
@@ -149,8 +149,8 @@
         <div class="upg-row">
             <div class="upg-info">
                 <div class="upg-title">Overclocking Extracteurs</div>
-                <div class="upg-desc">Augmente la vitesse de minage de toutes les foreuses.</div>
-                <div class="upg-lvl" id="lvl-miner">Niveau: 0/5</div>
+                <div class="upg-desc">Réduit le délai de minage (-5% de délai par niveau).</div>
+                <div class="upg-lvl" id="lvl-miner">Niveau: 0/15</div>
             </div>
             <button class="upg-btn" id="btn-upg-miner" onclick="buyUpgrade('miner')">1000 ¢</button>
         </div>
@@ -159,7 +159,7 @@
             <div class="upg-info">
                 <div class="upg-title">Moteurs Magnétiques</div>
                 <div class="upg-desc">Augmente la vitesse de déplacement sur les convoyeurs.</div>
-                <div class="upg-lvl" id="lvl-belt">Niveau: 0/5</div>
+                <div class="upg-lvl" id="lvl-belt">Niveau: 0/20</div>
             </div>
             <button class="upg-btn" id="btn-upg-belt" onclick="buyUpgrade('belt')">1000 ¢</button>
         </div>
@@ -167,10 +167,10 @@
         <div class="upg-row">
             <div class="upg-info">
                 <div class="upg-title">Négociation de Flux</div>
-                <div class="upg-desc">Augmente le prix de revente au Core (+50% par niveau).</div>
-                <div class="upg-lvl" id="lvl-value">Niveau: 0/5</div>
+                <div class="upg-desc">Augmente le prix de revente au Core (+10% par niveau).</div>
+                <div class="upg-lvl" id="lvl-value">Niveau: 0/∞</div>
             </div>
-            <button class="upg-btn" id="btn-upg-value" onclick="buyUpgrade('value')">2500 ¢</button>
+            <button class="upg-btn" id="btn-upg-value" onclick="buyUpgrade('value')">2000 ¢</button>
         </div>
     </div>
 
@@ -191,7 +191,7 @@
         <div class="panel-container">
             <div class="panel">
                 <div class="header-flex">
-                    <h1>LogiNode v13.0</h1>
+                    <h1>LogiNode v14.0</h1>
                     <div>
                         <button class="sys-btn" onclick="toggleUpgrades()" style="margin-right: 5px; background: #2980b9; color:#fff; border-color:#3498db;">UPGRADES</button>
                         <button class="sys-btn danger" onclick="resetGame()" title="Effacer la sauvegarde">RESET</button>
@@ -266,18 +266,18 @@
                     </button>
                     <button class="btn" onclick="setBuildMode('integrator')" id="btn-integrator" style="display:none;">
                         <span style="width:12px;height:12px;background:#ecf0f1;display:inline-block;border:1px solid #333;"></span>
-                        Intégrateur <span style="color:#aaa;font-size:0.7rem;">(1500¢ / 50W)</span> <span class="shortcut">9</span>
+                        Intégrateur <span style="color:#aaa;font-size:0.7rem;">(2500¢ / 50W)</span> <span class="shortcut">9</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('compressor')" id="btn-compressor" style="display:none; border-color:#000;">
                         <span style="width:12px;height:12px;background:#000;display:inline-block;border:1px solid #fff;"></span>
-                        Compresseur <span style="color:#aaa;font-size:0.7rem;">(3000¢ / 150W)</span> <span class="shortcut">C</span>
+                        Compresseur <span style="color:#aaa;font-size:0.7rem;">(8000¢ / 150W)</span> <span class="shortcut">C</span>
                     </button>
 
                     <hr id="hr-security" style="border-color:#333; width:100%; margin: 2px 0; display:none;">
                     
                     <button class="btn" onclick="setBuildMode('hub')" id="btn-hub" style="display:none; border-color:#3498db;">
                         <span style="width:12px;height:12px;background:#3498db;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;">H</span>
-                        Relais Export <span style="color:#aaa;font-size:0.7rem;">(5000¢ / 100W)</span> <span class="shortcut">H</span>
+                        Relais Export <span style="color:#aaa;font-size:0.7rem;">(15000¢ / 100W)</span> <span class="shortcut">H</span>
                     </button>
                     <button class="btn" onclick="setBuildMode('generator')" id="btn-generator" style="display:none; border-color:#f1c40f;">
                         <span style="width:12px;height:12px;background:#f1c40f;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">⚡</span>
@@ -285,7 +285,7 @@
                     </button>
                     <button class="btn" onclick="setBuildMode('firewall')" id="btn-firewall" style="display:none; border-color:#e74c3c;">
                         <span style="width:12px;height:12px;background:#c0392b;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;">♜</span>
-                        Firewall <span style="color:#aaa;font-size:0.7rem;">(800¢ / 20W)</span> <span class="shortcut">F</span>
+                        Firewall <span style="color:#aaa;font-size:0.7rem;">(1200¢ / 20W)</span> <span class="shortcut">F</span>
                     </button>
                     
                     <hr style="border-color:#333; width:100%; margin: 2px 0;">
@@ -301,10 +301,10 @@
                 </div>
 
                 <div class="tutorial">
-                    <strong>Nouveautés V13 :</strong><br>
-                    - 📦 <strong>Gisements x10 :</strong> Les filons contiennent 10 fois plus de minerai.<br>
-                    - 🔎 <strong>Scanner :</strong> Survolez un gisement pour voir ce qu'il lui reste.<br>
-                    - 📡 <strong>Relais (H) :</strong> Un 2ème point de livraison pour vos grandes usines.
+                    <strong>Nouveautés V14 (Économie) :</strong><br>
+                    - 📉 <strong>Rééquilibrage :</strong> Les prix de vente sont plus faibles.<br>
+                    - 🚀 <strong>Upgrades :</strong> Coûtent plus cher mais vont plus loin (Négociation infinie).<br>
+                    - 🗺️ <strong>Secteurs :</strong> Coûtent de plus en plus cher à débloquer.
                 </div>
             </div>
         </div>
@@ -324,7 +324,7 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const TILE_SIZE = 40;
-        const CHUNK_SIZE = 10; // 10x10 tiles per chunk
+        const CHUNK_SIZE = 10; 
         
         const DIRS = [
             { x: 0, y: -1, symbol: '↑', name: 'HAUT' },
@@ -333,7 +333,6 @@
             { x: -1, y: 0, symbol: '←', name: 'GAUCHE' }
         ];
 
-        // Consommation électrique
         const POWER_USAGE = {
             'miner': 10, 'upgrader': 15, 'assembler': 30, 'integrator': 50, 'compressor': 150, 'sorter': 5, 'firewall': 20, 'hub': 100
         };
@@ -341,11 +340,11 @@
         // --- ETAT DU JEU ---
         const game = {
             money: 1000, 
-            gridWidth: 100, gridHeight: 100, // 10x10 chunks
+            gridWidth: 100, gridHeight: 100, 
             grid: [], items: [], deliveries: [], particles: [],
             enemies: [], lasers: [],
             
-            unlockedChunks: new Set(), // Set of "cx,cy" strings
+            unlockedChunks: new Set(), 
             
             power: { produced: 50, consumed: 0, efficiency: 1.0 },
             upgrades: { miner: 0, belt: 0, value: 0 },
@@ -358,7 +357,7 @@
                 { title: "Phase 3: SÉCURITÉ", desc: "ALERTE: Virus détectés !\nProduisez 75 Violets (Assembleur).\n<span style='color:#e74c3c'>Nécessite de l'Énergie et des Firewalls.</span>", type: 'advanced_purple', req: 75 },
                 { title: "Phase 4: Intégration", desc: "Nouveaux gisements: Quantique (Rose).\nCombinez Violet + Rose dans l'Intégrateur.\n<span style='color:#2ecc71'>Débloque: Intégrateur, Mine Rose, Hub Export.</span>", type: 'omega', req: 50 },
                 { title: "Phase 5: Maîtrise Quantique", desc: "Forgez la Matière Sombre.\n<span style='color:#2ecc71'>Débloque: Compresseur (3 Omegas = 1 Singularité).</span>\nLivrez 25 Singularités (Noir).", type: 'singularity', req: 25 },
-                { title: "Phase 6: Infinie", desc: "Système optimisé. Survivez et maximisez les profits.", type: 'none', req: 0 }
+                { title: "Phase 6: Infinie", desc: "Système optimisé. Survivez et étendez l'usine.", type: 'none', req: 0 }
             ],
             
             buildMode: 'cursor', currentDir: 0,
@@ -393,12 +392,18 @@
             }
         }
 
-        // --- UPGRADES & TRIEUR ---
+        // --- UPGRADES REFONTE V14 ---
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        }
+
         function getUpgradeCost(type) {
             let lvl = game.upgrades[type];
-            if(lvl >= 5) return Infinity;
-            if(type === 'value') return 2500 * Math.pow(2, lvl); 
-            return 1000 * Math.pow(2, lvl);
+            if(type === 'miner' && lvl >= 15) return Infinity;
+            if(type === 'belt' && lvl >= 20) return Infinity;
+            
+            let base = type === 'value' ? 2000 : 1000;
+            return Math.floor(base * Math.pow(1.6, lvl)); // Croissance exponentielle abrupte
         }
 
         function toggleUpgrades() {
@@ -408,23 +413,25 @@
         }
 
         function updateUpgradeUI() {
+            let maxLvl = {miner: 15, belt: 20, value: '∞'};
             ['miner', 'belt', 'value'].forEach(type => {
                 let lvl = game.upgrades[type]; let cost = getUpgradeCost(type);
-                document.getElementById(`lvl-${type}`).innerText = `Niveau: ${lvl}/5`;
+                document.getElementById(`lvl-${type}`).innerText = `Niveau: ${lvl}/${maxLvl[type]}`;
                 let btn = document.getElementById(`btn-upg-${type}`);
-                if (lvl >= 5) { btn.innerText = "MAX"; btn.disabled = true; } 
-                else { btn.innerText = cost + " ¢"; btn.disabled = (game.money < cost); }
+                if (cost === Infinity) { btn.innerText = "MAX"; btn.disabled = true; } 
+                else { btn.innerText = formatNumber(cost) + " ¢"; btn.disabled = (game.money < cost); }
             });
         }
 
         function buyUpgrade(type) {
             let cost = getUpgradeCost(type);
-            if (game.money >= cost && game.upgrades[type] < 5) {
+            if (game.money >= cost) {
                 game.money -= cost; game.upgrades[type]++;
                 updateUpgradeUI(); updateUI(); saveGame();
             }
         }
 
+        // --- TRIEUR ---
         const RESOURCES = [
             { id: 'raw_blue', name: 'Bleu', color: '#00d2ff' }, { id: 'proc_blue', name: 'Vert', color: '#2ecc71' },
             { id: 'raw_orange', name: 'Orange', color: '#ff9f43' }, { id: 'proc_orange', name: 'Jaune', color: '#feca57' },
@@ -479,14 +486,11 @@
                     if(t.resource || t.building) saveData.gridData.push({x: x, y: y, r: t.resource, b: t.building});
                 }
             }
-            localStorage.setItem('loginode_save_v13', JSON.stringify(saveData));
+            localStorage.setItem('loginode_save_v14', JSON.stringify(saveData));
         }
 
         function loadGame() {
-            let saved = localStorage.getItem('loginode_save_v13'); 
-            // Fallback pour ne pas casser la partie de V12 à V13
-            if(!saved) saved = localStorage.getItem('loginode_save_v12'); 
-
+            let saved = localStorage.getItem('loginode_save_v14'); // Forcé sur V14 pour wipe à cause de la refonte éco
             if(saved) {
                 try {
                     let data = JSON.parse(saved);
@@ -521,12 +525,13 @@
         }
 
         function getChunkCost() {
-            return game.unlockedChunks.size * 1000; 
+            // Croissance exponentielle du prix des territoires
+            let extraChunks = Math.max(0, game.unlockedChunks.size - 9);
+            return Math.floor(1000 * Math.pow(1.3, extraChunks)); 
         }
 
         function isChunkUnlocked(gx, gy) {
-            let cx = Math.floor(gx / CHUNK_SIZE);
-            let cy = Math.floor(gy / CHUNK_SIZE);
+            let cx = Math.floor(gx / CHUNK_SIZE); let cy = Math.floor(gy / CHUNK_SIZE);
             return game.unlockedChunks.has(`${cx},${cy}`);
         }
 
@@ -555,7 +560,6 @@
                 }
             }
 
-            // Génération de gisements x10 (V13)
             let nodesPlaced = 0;
             while(nodesPlaced < 200) {
                 let rx = Math.floor(Math.random() * game.gridWidth), ry = Math.floor(Math.random() * game.gridHeight);
@@ -563,7 +567,7 @@
                 if (dist > 4 && !game.grid[rx][ry].resource) {
                     let rand = Math.random();
                     let type = 'node_blue';
-                    let amt = Math.floor(Math.random() * 5000) + 3000; // 3000 à 8000
+                    let amt = Math.floor(Math.random() * 5000) + 3000;
                     
                     if(rand > 0.8) { type = 'node_pink'; amt = Math.floor(Math.random() * 3000) + 1500; }
                     else if(rand > 0.5) { type = 'node_orange'; amt = Math.floor(Math.random() * 4000) + 2000; }
@@ -604,7 +608,8 @@
             if (tile.building || game.buildMode === 'cursor' || game.buildMode === 'pan') return;
             if (!isUnlocked(game.buildMode)) return;
 
-            const costs = { 'miner': 100, 'belt': 15, 'upgrader': 250, 'assembler': 800, 'splitter': 100, 'sorter': 300, 'integrator': 1500, 'compressor': 3000, 'tunnel': 250, 'trash': 50, 'generator': 500, 'firewall': 800, 'hub': 5000 };
+            // PRIX AUGMENTES POUR LE LATE GAME
+            const costs = { 'miner': 100, 'belt': 15, 'upgrader': 250, 'assembler': 800, 'splitter': 100, 'sorter': 300, 'integrator': 2500, 'compressor': 8000, 'tunnel': 250, 'trash': 50, 'generator': 500, 'firewall': 1200, 'hub': 15000 };
             
             if (game.money >= costs[game.buildMode]) {
                 if (game.buildMode === 'miner') {
@@ -628,7 +633,6 @@
             }
         }
 
-        // --- GESTION ENERGIE ---
         function calculatePower() {
             let prod = 50; 
             let cons = 0;
@@ -660,8 +664,7 @@
             if (game.keys['ArrowLeft'] || game.keys['q'] || game.keys['a']) game.camera.x += camSpeed;
             if (game.keys['ArrowRight'] || game.keys['d']) game.camera.x -= camSpeed;
 
-            // 1. Minage (Épuisement)
-            let minerInterval = Math.max(10, 60 - (game.upgrades.miner * 10)); 
+            let minerInterval = Math.max(15, 60 - (game.upgrades.miner * 3)); // Max upgrade = -45 ticks = 15 ticks min
             if (game.power.efficiency > 0 && game.tick % Math.floor(minerInterval / game.power.efficiency) === 0) {
                 for (let x = 0; x < game.gridWidth; x++) {
                     for (let y = 0; y < game.gridHeight; y++) {
@@ -684,7 +687,6 @@
                 }
             }
 
-            // 2. Gestion des Menaces
             if (game.missionIndex >= 2 && game.tick % 180 === 0) { 
                 let spawnChance = Math.min(0.5, 0.1 * game.missionIndex);
                 if (Math.random() < spawnChance) {
@@ -712,7 +714,6 @@
                 }
             }
 
-            // 3. Défenses (Firewalls)
             if (game.power.efficiency > 0.1 && game.tick % Math.floor(30 / game.power.efficiency) === 0) {
                 for (let x = 0; x < game.gridWidth; x++) {
                     for (let y = 0; y < game.gridHeight; y++) {
@@ -739,7 +740,6 @@
             for(let i=game.lasers.length-1; i>=0; i--) { game.lasers[i].life--; if(game.lasers[i].life <= 0) game.lasers.splice(i, 1); }
             for(let i=game.particles.length-1; i>=0; i--) { game.particles[i].life -= 1.5; game.particles[i].y -= 0.5; if(game.particles[i].life <= 0) game.particles.splice(i, 1); }
 
-            // 4. Mouvement des objets
             for (let i = game.items.length - 1; i >= 0; i--) {
                 let item = game.items[i];
                 let currentTile = game.grid[item.gridX] && game.grid[item.gridX][item.gridY];
@@ -751,8 +751,10 @@
                         let b = currentTile.building;
                         
                         if (b.type === 'core' || b.type === 'hub') {
-                            const baseValues = { 'raw_blue': 15, 'proc_blue': 40, 'raw_orange': 20, 'proc_orange': 50, 'advanced_purple': 200, 'raw_pink': 100, 'omega': 1000, 'singularity': 5000 };
-                            let val = Math.floor((baseValues[item.type] || 0) * (1 + (game.upgrades.value * 0.5)));
+                            // REDUCTION MASSIVE DES PRIX DE BASE
+                            const baseValues = { 'raw_blue': 10, 'proc_blue': 25, 'raw_orange': 15, 'proc_orange': 35, 'advanced_purple': 80, 'raw_pink': 40, 'omega': 200, 'singularity': 800 };
+                            // Bonus Valeur passe à +10% par niveau (au lieu de 50%)
+                            let val = Math.floor((baseValues[item.type] || 0) * (1 + (game.upgrades.value * 0.1)));
                             
                             game.money += val; game.deliveries.push(Date.now());
                             game.particles.push(new Particle(item.x * TILE_SIZE + TILE_SIZE/2, item.y * TILE_SIZE + TILE_SIZE/2 - 10, `+${val}¢`, '#2ecc71'));
@@ -847,7 +849,7 @@
 
                 if (item.movingDir !== -1) {
                     const baseSpeeds = { 'raw_blue': 0.06, 'proc_blue': 0.05, 'raw_orange': 0.06, 'proc_orange': 0.05, 'advanced_purple': 0.04, 'raw_pink': 0.04, 'omega': 0.03, 'singularity': 0.02 };
-                    let speedMod = game.upgrades.belt * 0.015;
+                    let speedMod = game.upgrades.belt * 0.005; // Réduction du boost max
                     let currentSpeed = ((baseSpeeds[item.type] || 0.05) + speedMod) * Math.max(0.1, game.power.efficiency);
                     
                     item.progress += currentSpeed;
@@ -887,7 +889,6 @@
             for (let x = startX; x <= endX; x++) { ctx.beginPath(); ctx.moveTo(x * TILE_SIZE, startY * TILE_SIZE); ctx.lineTo(x * TILE_SIZE, endY * TILE_SIZE); ctx.stroke(); }
             for (let y = startY; y <= endY; y++) { ctx.beginPath(); ctx.moveTo(startX * TILE_SIZE, y * TILE_SIZE); ctx.lineTo(endX * TILE_SIZE, y * TILE_SIZE); ctx.stroke(); }
 
-            // Dessin des Chunks (Brouillard de guerre)
             let startCX = Math.max(0, Math.floor(startX / CHUNK_SIZE));
             let endCX = Math.min(10, Math.ceil(endX / CHUNK_SIZE));
             let startCY = Math.max(0, Math.floor(startY / CHUNK_SIZE));
@@ -1013,7 +1014,7 @@
                             ctx.fillStyle = 'rgba(52, 152, 219, 0.2)'; ctx.fillRect(px, py, CHUNK_SIZE*TILE_SIZE, CHUNK_SIZE*TILE_SIZE);
                             ctx.fillStyle = '#fff'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                             let cost = getChunkCost();
-                            ctx.fillText(`🔒 ${cost}¢`, px + (CHUNK_SIZE*TILE_SIZE)/2, py + (CHUNK_SIZE*TILE_SIZE)/2);
+                            ctx.fillText(`🔒 ${formatNumber(cost)}¢`, px + (CHUNK_SIZE*TILE_SIZE)/2, py + (CHUNK_SIZE*TILE_SIZE)/2);
                             ctx.font = '12px Arial'; ctx.fillStyle = '#aaa'; ctx.fillText(`Cliquez pour débloquer`, px + (CHUNK_SIZE*TILE_SIZE)/2, py + (CHUNK_SIZE*TILE_SIZE)/2 + 20);
                         }
                     }
@@ -1058,18 +1059,18 @@
             }
             ctx.globalAlpha = 1.0;
 
-            // Info-bulle pour les gisements au survol
-            let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
-            if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight && !game.isMiddleDragging) {
-                let hoverTile = game.grid[gx][gy];
-                if (hoverTile && hoverTile.resource && isChunkUnlocked(gx, gy)) {
+            let hx = Math.floor(game.worldX / TILE_SIZE); let hy = Math.floor(game.worldY / TILE_SIZE);
+            if (hx >= 0 && hx < game.gridWidth && hy >= 0 && hy < game.gridHeight && !game.isMiddleDragging) {
+                let hoverTile = game.grid[hx][hy];
+                if (hoverTile && hoverTile.resource && isChunkUnlocked(hx, hy)) {
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                    ctx.fillRect(gx * TILE_SIZE, (gy - 1) * TILE_SIZE + 15, TILE_SIZE * 2.5, 20);
+                    ctx.fillRect(hx * TILE_SIZE, (hy - 1) * TILE_SIZE + 15, TILE_SIZE * 2.5, 20);
                     ctx.fillStyle = '#fff'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
-                    ctx.fillText(`${hoverTile.resource.amount} / ${hoverTile.resource.max}`, gx * TILE_SIZE + 5, (gy - 1) * TILE_SIZE + 25);
+                    ctx.fillText(`${formatNumber(hoverTile.resource.amount)} / ${formatNumber(hoverTile.resource.max)}`, hx * TILE_SIZE + 5, (hy - 1) * TILE_SIZE + 25);
                 }
             }
 
+            let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
             if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight && !game.isMiddleDragging) {
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2 / game.zoom; ctx.strokeRect(gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
@@ -1134,7 +1135,7 @@
 
         // --- INTERACTIONS UI ---
         function updateUI() {
-            document.getElementById('moneyDisplay').innerText = game.money + ' ¢';
+            document.getElementById('moneyDisplay').innerText = formatNumber(game.money) + ' ¢';
             document.getElementById('dirDisplay').innerText = DIRS[game.currentDir].name + ' (' + DIRS[game.currentDir].symbol + ')';
             
             let pDisplay = document.getElementById('powerDisplay');
@@ -1151,7 +1152,7 @@
             if (cm.req > 0) {
                 let pct = Math.min((game.missionProgress / cm.req) * 100, 100);
                 document.getElementById('missionBar').style.width = pct + '%';
-                document.getElementById('missionText').innerText = game.missionProgress + ' / ' + cm.req;
+                document.getElementById('missionText').innerText = formatNumber(game.missionProgress) + ' / ' + formatNumber(cm.req);
             } else { document.getElementById('missionBar').style.width = '100%'; document.getElementById('missionText').innerText = "∞"; }
 
             document.getElementById('btn-tunnel').style.display = isUnlocked('tunnel') ? 'flex' : 'none';
@@ -1239,7 +1240,6 @@
             let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
             let cx = Math.floor(gx / CHUNK_SIZE); let cy = Math.floor(gy / CHUNK_SIZE);
             
-            // Achat de secteur
             if (!game.unlockedChunks.has(`${cx},${cy}`)) {
                 if (isChunkAdjacentToUnlocked(cx, cy) && e.button === 0 && game.buildMode === 'cursor') {
                     let cost = getChunkCost();
