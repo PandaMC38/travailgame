@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiNode - Dashboard System V12</title>
+    <title>LogiNode - Dashboard System V13</title>
     <style>
         /* Styles de base - Thème sombre "IDE / Dashboard" */
         body {
@@ -191,7 +191,7 @@
         <div class="panel-container">
             <div class="panel">
                 <div class="header-flex">
-                    <h1>LogiNode v12.0</h1>
+                    <h1>LogiNode v13.0</h1>
                     <div>
                         <button class="sys-btn" onclick="toggleUpgrades()" style="margin-right: 5px; background: #2980b9; color:#fff; border-color:#3498db;">UPGRADES</button>
                         <button class="sys-btn danger" onclick="resetGame()" title="Effacer la sauvegarde">RESET</button>
@@ -275,6 +275,10 @@
 
                     <hr id="hr-security" style="border-color:#333; width:100%; margin: 2px 0; display:none;">
                     
+                    <button class="btn" onclick="setBuildMode('hub')" id="btn-hub" style="display:none; border-color:#3498db;">
+                        <span style="width:12px;height:12px;background:#3498db;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#fff;">H</span>
+                        Relais Export <span style="color:#aaa;font-size:0.7rem;">(5000¢ / 100W)</span> <span class="shortcut">H</span>
+                    </button>
                     <button class="btn" onclick="setBuildMode('generator')" id="btn-generator" style="display:none; border-color:#f1c40f;">
                         <span style="width:12px;height:12px;background:#f1c40f;display:inline-block;text-align:center;line-height:12px;font-size:10px;color:#000;">⚡</span>
                         Générateur <span style="color:#aaa;font-size:0.7rem;">(500¢ / +100W)</span> <span class="shortcut">G</span>
@@ -297,10 +301,10 @@
                 </div>
 
                 <div class="tutorial">
-                    <strong>Nouveautés V12 (Expansion) :</strong><br>
-                    - 🗺️ <strong>Brouillard :</strong> Achetez de nouveaux secteurs en cliquant sur les zones sombres.<br>
-                    - ⛏️ <strong>Épuisement :</strong> Les gisements se vident ! Cherchez-en d'autres.<br>
-                    - 🕳️ <strong>Compresseur :</strong> L'ultime usine (3 Omegas = 1 Singularité Noire).
+                    <strong>Nouveautés V13 :</strong><br>
+                    - 📦 <strong>Gisements x10 :</strong> Les filons contiennent 10 fois plus de minerai.<br>
+                    - 🔎 <strong>Scanner :</strong> Survolez un gisement pour voir ce qu'il lui reste.<br>
+                    - 📡 <strong>Relais (H) :</strong> Un 2ème point de livraison pour vos grandes usines.
                 </div>
             </div>
         </div>
@@ -331,7 +335,7 @@
 
         // Consommation électrique
         const POWER_USAGE = {
-            'miner': 10, 'upgrader': 15, 'assembler': 30, 'integrator': 50, 'compressor': 150, 'sorter': 5, 'firewall': 20
+            'miner': 10, 'upgrader': 15, 'assembler': 30, 'integrator': 50, 'compressor': 150, 'sorter': 5, 'firewall': 20, 'hub': 100
         };
 
         // --- ETAT DU JEU ---
@@ -352,7 +356,7 @@
                 { title: "Phase 1: Données Brutes", desc: "Acheminez 50 Flux Données (Bleu) au Core.", type: 'raw_blue', req: 50 },
                 { title: "Phase 2: Logistique", desc: "Acheminez 100 Flux Traités (Vert).\n<span style='color:#2ecc71'>Débloque: Traitement, Tunnel, Répartiteur.</span>", type: 'proc_blue', req: 100 },
                 { title: "Phase 3: SÉCURITÉ", desc: "ALERTE: Virus détectés !\nProduisez 75 Violets (Assembleur).\n<span style='color:#e74c3c'>Nécessite de l'Énergie et des Firewalls.</span>", type: 'advanced_purple', req: 75 },
-                { title: "Phase 4: Intégration", desc: "Nouveaux gisements: Quantique (Rose).\nCombinez Violet + Rose dans l'Intégrateur.\n<span style='color:#2ecc71'>Débloque: Intégrateur, Mine Rose.</span>", type: 'omega', req: 50 },
+                { title: "Phase 4: Intégration", desc: "Nouveaux gisements: Quantique (Rose).\nCombinez Violet + Rose dans l'Intégrateur.\n<span style='color:#2ecc71'>Débloque: Intégrateur, Mine Rose, Hub Export.</span>", type: 'omega', req: 50 },
                 { title: "Phase 5: Maîtrise Quantique", desc: "Forgez la Matière Sombre.\n<span style='color:#2ecc71'>Débloque: Compresseur (3 Omegas = 1 Singularité).</span>\nLivrez 25 Singularités (Noir).", type: 'singularity', req: 25 },
                 { title: "Phase 6: Infinie", desc: "Système optimisé. Survivez et maximisez les profits.", type: 'none', req: 0 }
             ],
@@ -475,11 +479,14 @@
                     if(t.resource || t.building) saveData.gridData.push({x: x, y: y, r: t.resource, b: t.building});
                 }
             }
-            localStorage.setItem('loginode_save_v12', JSON.stringify(saveData));
+            localStorage.setItem('loginode_save_v13', JSON.stringify(saveData));
         }
 
         function loadGame() {
-            let saved = localStorage.getItem('loginode_save_v12'); 
+            let saved = localStorage.getItem('loginode_save_v13'); 
+            // Fallback pour ne pas casser la partie de V12 à V13
+            if(!saved) saved = localStorage.getItem('loginode_save_v12'); 
+
             if(saved) {
                 try {
                     let data = JSON.parse(saved);
@@ -514,7 +521,7 @@
         }
 
         function getChunkCost() {
-            return game.unlockedChunks.size * 1000; // 9000 pour le premier, puis 10000, etc.
+            return game.unlockedChunks.size * 1000; 
         }
 
         function isChunkUnlocked(gx, gy) {
@@ -540,7 +547,6 @@
             game.camera.x = Math.floor(window.innerWidth / 2 - (game.core.x * TILE_SIZE * game.zoom + (TILE_SIZE*game.zoom) / 2));
             game.camera.y = Math.floor(window.innerHeight / 2 - (game.core.y * TILE_SIZE * game.zoom + (TILE_SIZE*game.zoom) / 2));
 
-            // Débloquer le centre (3x3 chunks autour du Core)
             let coreCx = Math.floor(game.core.x / CHUNK_SIZE);
             let coreCy = Math.floor(game.core.y / CHUNK_SIZE);
             for(let i=-1; i<=1; i++){
@@ -549,7 +555,7 @@
                 }
             }
 
-            // Génération de gisements (Moins nombreux, mais avec des quantités limitées)
+            // Génération de gisements x10 (V13)
             let nodesPlaced = 0;
             while(nodesPlaced < 200) {
                 let rx = Math.floor(Math.random() * game.gridWidth), ry = Math.floor(Math.random() * game.gridHeight);
@@ -557,10 +563,10 @@
                 if (dist > 4 && !game.grid[rx][ry].resource) {
                     let rand = Math.random();
                     let type = 'node_blue';
-                    let amt = Math.floor(Math.random() * 500) + 300; // 300 à 800 minerais par filon
+                    let amt = Math.floor(Math.random() * 5000) + 3000; // 3000 à 8000
                     
-                    if(rand > 0.8) { type = 'node_pink'; amt = Math.floor(Math.random() * 300) + 150; }
-                    else if(rand > 0.5) { type = 'node_orange'; amt = Math.floor(Math.random() * 400) + 200; }
+                    if(rand > 0.8) { type = 'node_pink'; amt = Math.floor(Math.random() * 3000) + 1500; }
+                    else if(rand > 0.5) { type = 'node_orange'; amt = Math.floor(Math.random() * 4000) + 2000; }
                     
                     game.grid[rx][ry].resource = { type: type, amount: amt, max: amt };
                     nodesPlaced++;
@@ -573,7 +579,7 @@
         function isUnlocked(mode) {
             if (['splitter', 'upgrader', 'tunnel', 'trash'].includes(mode)) return game.missionIndex >= 1;
             if (['assembler', 'sorter', 'generator', 'firewall'].includes(mode)) return game.missionIndex >= 2;
-            if (mode === 'integrator') return game.missionIndex >= 3;
+            if (['integrator', 'hub'].includes(mode)) return game.missionIndex >= 3;
             if (mode === 'compressor') return game.missionIndex >= 4;
             return true;
         }
@@ -581,17 +587,14 @@
         function tryBuild(gx, gy, isRightClick) {
             if (gx < 0 || gx >= game.gridWidth || gy < 0 || gy >= game.gridHeight) return;
             
-            // Interaction Brouillard de Guerre
             let cx = Math.floor(gx / CHUNK_SIZE); let cy = Math.floor(gy / CHUNK_SIZE);
-            if (!game.unlockedChunks.has(`${cx},${cy}`)) {
-                return; // Empêche simplement la construction dans le brouillard
-            }
+            if (!game.unlockedChunks.has(`${cx},${cy}`)) return; 
 
             let tile = game.grid[gx][gy];
 
             if (game.buildMode === 'delete' || isRightClick) {
                 if (tile.building && tile.building.type !== 'core') {
-                    let wasGen = tile.building.type === 'generator';
+                    let wasGen = tile.building.type === 'generator' || tile.building.type === 'hub';
                     tile.building = null;
                     if (wasGen) calculatePower();
                 }
@@ -601,7 +604,7 @@
             if (tile.building || game.buildMode === 'cursor' || game.buildMode === 'pan') return;
             if (!isUnlocked(game.buildMode)) return;
 
-            const costs = { 'miner': 100, 'belt': 15, 'upgrader': 250, 'assembler': 800, 'splitter': 100, 'sorter': 300, 'integrator': 1500, 'compressor': 3000, 'tunnel': 250, 'trash': 50, 'generator': 500, 'firewall': 800 };
+            const costs = { 'miner': 100, 'belt': 15, 'upgrader': 250, 'assembler': 800, 'splitter': 100, 'sorter': 300, 'integrator': 1500, 'compressor': 3000, 'tunnel': 250, 'trash': 50, 'generator': 500, 'firewall': 800, 'hub': 5000 };
             
             if (game.money >= costs[game.buildMode]) {
                 if (game.buildMode === 'miner') {
@@ -669,12 +672,11 @@
                                 let tStr = tile.resource.type.replace('node_', 'raw_');
                                 game.items.push(new Item(x, y, tStr));
                                 
-                                // Diminution du filon
                                 tile.resource.amount--;
                                 if(tile.resource.amount <= 0) {
-                                    tile.resource = null; // Filon vide !
+                                    tile.resource = null; 
                                     game.particles.push(new Particle(x*TILE_SIZE, y*TILE_SIZE, "ÉPUISÉ", "#e74c3c"));
-                                    tile.building = null; // Détruit la mine
+                                    tile.building = null; 
                                 }
                             }
                         }
@@ -701,7 +703,7 @@
                 let gx = Math.round(e.x), gy = Math.round(e.y);
                 if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight) {
                     let b = game.grid[gx][gy].building;
-                    if (b && b.type !== 'core') {
+                    if (b && b.type !== 'core' && b.type !== 'hub') {
                         game.grid[gx][gy].building = null;
                         game.particles.push(new Particle(gx * TILE_SIZE, gy * TILE_SIZE, "CORROMPU", "#e74c3c"));
                         game.enemies.splice(i, 1);
@@ -748,7 +750,7 @@
                     if (currentTile.building) {
                         let b = currentTile.building;
                         
-                        if (b.type === 'core') {
+                        if (b.type === 'core' || b.type === 'hub') {
                             const baseValues = { 'raw_blue': 15, 'proc_blue': 40, 'raw_orange': 20, 'proc_orange': 50, 'advanced_purple': 200, 'raw_pink': 100, 'omega': 1000, 'singularity': 5000 };
                             let val = Math.floor((baseValues[item.type] || 0) * (1 + (game.upgrades.value * 0.5)));
                             
@@ -821,7 +823,7 @@
                                 else { game.items.splice(i, 1); continue; }
                             } else item.movingDir = -1; 
                         }
-                        else if (b.type === 'compressor') { // V12
+                        else if (b.type === 'compressor') {
                             if (item.type === 'omega') {
                                 b.inventory.omega = (b.inventory.omega || 0) + 1;
                                 if (b.inventory.omega >= 3) {
@@ -896,9 +898,8 @@
                     let tile = game.grid[x][y]; let px = x * TILE_SIZE; let py = y * TILE_SIZE;
 
                     if (tile.resource) {
-                        // Ratio d'épuisement
                         let ratio = tile.resource.amount / tile.resource.max;
-                        let sOffset = (1 - ratio) * 10; // Réduit la taille au fur et à mesure
+                        let sOffset = (1 - ratio) * 10; 
                         
                         if (tile.resource.type === 'node_blue') {
                             ctx.fillStyle = '#2980b9'; ctx.fillRect(px + 4 + sOffset/2, py + 4 + sOffset/2, TILE_SIZE - 8 - sOffset, TILE_SIZE - 8 - sOffset);
@@ -913,7 +914,6 @@
                             if(game.missionIndex < 3) { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(px+4, py+4, TILE_SIZE-8, TILE_SIZE-8); ctx.fillStyle='#fff'; ctx.font='10px Arial'; ctx.fillText('🔒', px+15, py+23); }
                         }
                         
-                        // Jauge d'épuisement discrète
                         ctx.fillStyle = '#333'; ctx.fillRect(px+4, py+TILE_SIZE-6, TILE_SIZE-8, 3);
                         ctx.fillStyle = ratio > 0.3 ? '#2ecc71' : '#e74c3c'; ctx.fillRect(px+4, py+TILE_SIZE-6, (TILE_SIZE-8)*ratio, 3);
                     }
@@ -925,6 +925,10 @@
                             ctx.fillStyle = '#f1c40f'; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
                             ctx.fillStyle = '#000'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('CORE', px + TILE_SIZE/2, py + TILE_SIZE/2);
                         } 
+                        else if (b.type === 'hub') {
+                            ctx.fillStyle = '#3498db'; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                            ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('HUB', px + TILE_SIZE/2, py + TILE_SIZE/2);
+                        }
                         else if (b.type === 'generator') {
                             ctx.fillStyle = '#f1c40f'; ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
                             ctx.fillStyle = '#000'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⚡', px + TILE_SIZE/2, py + TILE_SIZE/2);
@@ -999,14 +1003,12 @@
                 }
             }
 
-            // Brouillard de Guerre (Locked Chunks)
             for(let cx = startCX; cx < endCX; cx++) {
                 for(let cy = startCY; cy < endCY; cy++) {
                     if(!game.unlockedChunks.has(`${cx},${cy}`)) {
                         let px = cx * CHUNK_SIZE * TILE_SIZE; let py = cy * CHUNK_SIZE * TILE_SIZE;
                         ctx.fillStyle = 'rgba(10, 10, 15, 0.9)'; ctx.fillRect(px, py, CHUNK_SIZE*TILE_SIZE, CHUNK_SIZE*TILE_SIZE);
                         
-                        // Si adjacent, montrer l'option d'achat
                         if (isChunkAdjacentToUnlocked(cx, cy)) {
                             ctx.fillStyle = 'rgba(52, 152, 219, 0.2)'; ctx.fillRect(px, py, CHUNK_SIZE*TILE_SIZE, CHUNK_SIZE*TILE_SIZE);
                             ctx.fillStyle = '#fff'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -1056,11 +1058,22 @@
             }
             ctx.globalAlpha = 1.0;
 
+            // Info-bulle pour les gisements au survol
             let gx = Math.floor(game.worldX / TILE_SIZE); let gy = Math.floor(game.worldY / TILE_SIZE);
+            if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight && !game.isMiddleDragging) {
+                let hoverTile = game.grid[gx][gy];
+                if (hoverTile && hoverTile.resource && isChunkUnlocked(gx, gy)) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillRect(gx * TILE_SIZE, (gy - 1) * TILE_SIZE + 15, TILE_SIZE * 2.5, 20);
+                    ctx.fillStyle = '#fff'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
+                    ctx.fillText(`${hoverTile.resource.amount} / ${hoverTile.resource.max}`, gx * TILE_SIZE + 5, (gy - 1) * TILE_SIZE + 25);
+                }
+            }
+
             if (gx >= 0 && gx < game.gridWidth && gy >= 0 && gy < game.gridHeight && !game.isMiddleDragging) {
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2 / game.zoom; ctx.strokeRect(gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-                if (['belt', 'miner', 'upgrader', 'splitter', 'sorter', 'assembler', 'integrator', 'compressor', 'tunnel', 'trash', 'generator', 'firewall'].includes(game.buildMode)) {
+                if (['belt', 'miner', 'upgrader', 'splitter', 'sorter', 'assembler', 'integrator', 'compressor', 'tunnel', 'trash', 'generator', 'firewall', 'hub'].includes(game.buildMode)) {
                     ctx.globalAlpha = 0.5; let px = gx * TILE_SIZE; let py = gy * TILE_SIZE;
                     ctx.save(); ctx.translate(px + TILE_SIZE/2, py + TILE_SIZE/2); ctx.rotate(game.currentDir * Math.PI / 2);
                     
@@ -1075,6 +1088,7 @@
                     else if (game.buildMode === 'compressor') { ctx.fillStyle = '#000'; ctx.fillRect(-18, -18, 36, 36); }
                     else if (game.buildMode === 'miner') { ctx.fillStyle = '#e74c3c'; ctx.fillRect(-16, -16, 32, 32); }
                     else if (game.buildMode === 'generator') { ctx.fillStyle = '#f1c40f'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#000'; ctx.font='20px Arial'; ctx.fillText('⚡', 0, 0); }
+                    else if (game.buildMode === 'hub') { ctx.fillStyle = '#3498db'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.font='12px Arial'; ctx.fillText('HUB', 0, 0); }
                     else if (game.buildMode === 'firewall') { 
                         ctx.fillStyle = '#c0392b'; ctx.fillRect(-18, -18, 36, 36); ctx.fillStyle='#fff'; ctx.font='20px Arial'; ctx.fillText('♜', 0, 0); 
                         ctx.strokeStyle = 'rgba(231, 76, 60, 0.2)'; ctx.beginPath(); ctx.arc(0, 0, TILE_SIZE * 5, 0, Math.PI*2); ctx.stroke(); ctx.fillStyle = 'rgba(231, 76, 60, 0.05)'; ctx.fill();
@@ -1095,7 +1109,7 @@
 
                     let t = game.grid[x][y];
                     if (t.building) {
-                        if (t.building.type === 'core') ctx.fillStyle = '#f1c40f';
+                        if (t.building.type === 'core' || t.building.type === 'hub') ctx.fillStyle = '#f1c40f';
                         else if (t.building.type === 'firewall' || t.building.type === 'generator') ctx.fillStyle = '#e74c3c';
                         else ctx.fillStyle = '#7f8c8d';
                         ctx.fillRect(mapX + x * scaleX, mapY + y * scaleY, scaleX, scaleY);
@@ -1148,6 +1162,7 @@
             document.getElementById('btn-integrator').style.display = isUnlocked('integrator') ? 'flex' : 'none';
             document.getElementById('btn-compressor').style.display = isUnlocked('compressor') ? 'flex' : 'none';
             document.getElementById('btn-trash').style.display = isUnlocked('trash') ? 'flex' : 'none';
+            document.getElementById('btn-hub').style.display = isUnlocked('hub') ? 'flex' : 'none';
             
             let showSec = isUnlocked('generator');
             document.getElementById('btn-generator').style.display = showSec ? 'flex' : 'none';
@@ -1195,6 +1210,7 @@
             if(e.key === '0') setBuildMode('trash');
             if(e.key.toLowerCase() === 'g') setBuildMode('generator');
             if(e.key.toLowerCase() === 'f') setBuildMode('firewall');
+            if(e.key.toLowerCase() === 'h') setBuildMode('hub');
             if(e.key.toLowerCase() === 'x') setBuildMode('delete');
         });
         
