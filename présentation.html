@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiNode: Architecture & Design System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        /* Custom Scrollbar for "Dashboard" feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a20;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4db8ff;
+        }
+        
+        .glass-panel {
+            background: rgba(30, 30, 36, 0.95);
+            border: 1px solid #3a3a45;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            height: 350px;
+            margin: 0 auto;
+        }
+
+        /* Scanline effect for immersion */
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(255, 255, 255, 0.02) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.1;
+            background-size: 100% 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            animation: scanline 10s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { top: -100%; }
+            100% { top: 100%; }
+        }
+    </style>
+    <!-- Chosen Palette: LogiNode Dark (Background: #1a1a20, Accent: #4db8ff, Success: #2ecc71, Warning: #f1c40f, Danger: #e74c3c) -->
+</head>
+<body class="bg-[#1a1a20] text-gray-200 font-mono min-h-screen flex flex-col">
+
+    <div class="scanline"></div>
+
+    <!-- Application Structure Plan: 
+         1. Header: Brand identity and "Stealth Mode" context.
+         2. Concept Dashboard: Cards summarizing the core pillars (Stealth, Loop, Constraints).
+         3. Resource Flow (Sankey): Visualizing the complex crafting chain (Blue -> Black).
+         4. Infrastructure Analytics: Interactive charts comparing building costs vs energy consumption.
+         5. Progression Simulator: A calculator for upgrade costs showing the exponential scaling.
+         6. Security & Threats: Visualizing the tower defense mechanics.
+         RATIONALE: This structure moves from high-level concept to deep data analysis, allowing a designer/developer to understand the game's balance.
+    -->
+
+    <!-- Header -->
+    <header class="border-b border-gray-700 bg-[#15151a] p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-[#4db8ff] animate-pulse"></div>
+                <h1 class="text-xl font-bold tracking-widest text-[#4db8ff]">LOGINODE <span class="text-xs text-gray-500 font-normal">// ARCHITECTURE SYSTEM</span></h1>
+            </div>
+            <div class="flex gap-4 text-xs">
+                <span class="px-2 py-1 rounded border border-green-500/30 text-green-400 bg-green-500/10">STATUS: ONLINE</span>
+                <span class="px-2 py-1 rounded border border-gray-600 text-gray-400 bg-gray-800 hidden md:block">VERSION: GDD 1.0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
+
+        <!-- SECTION 1: CORE CONCEPT -->
+        <section>
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-white mb-2">1. Paramètres de Mission</h2>
+                <p class="text-gray-400 text-sm">Vue d'ensemble des contraintes de gameplay et de la vision "Furtivité".</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Concept Card -->
+                <div class="glass-panel p-6 rounded-lg hover:border-[#4db8ff] transition-colors duration-300">
+                    <div class="text-[#4db8ff] text-3xl mb-4">👁️</div>
+                    <h3 class="text-lg font-bold mb-2">Furtivité Absolue</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Conçu pour l'environnement de bureau. Interface "Dashboard Server", pas d'installation, fichier unique.
+                        <br><br>
+                        <span class="text-xs bg-[#4db8ff]/20 text-[#4db8ff] px-2 py-1 rounded">Feature Clé: "Boss Key" (Échap)</span>
+                    </p>
+                </div>
+
+                <!-- Loop Card -->
+                <div class="glass-panel p-6 rounded-lg hover:border-[#f1c40f] transition-colors duration-300">
+                    <div class="text-[#f1c40f] text-3xl mb-4">🔄</div>
+                    <h3 class="text-lg font-bold mb-2">Boucle Logistique</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Extraction <span class="text-gray-600">→</span> Transport <span class="text-gray-600">→</span> Transformation <span class="text-gray-600">→</span> Vente.
+                        <br><br>
+                        Gestion des gisements limités et expansion territoriale via achat de "Chunks".
+                    </p>
+                </div>
+
+                <!-- Constraint Card -->
+                <div class="glass-panel p-6 rounded-lg hover:border-[#e74c3c] transition-colors duration-300">
+                    <div class="text-[#e74c3c] text-3xl mb-4">⚡</div>
+                    <h3 class="text-lg font-bold mb-2">Contraintes Critiques</h3>
+                    <ul class="text-sm text-gray-400 space-y-2 list-disc list-inside">
+                        <li><span class="text-white">Énergie (W):</span> Risque de Brownout global.</li>
+                        <li><span class="text-white">Sécurité:</span> Attaques de Virus (Tower Defense).</li>
+                        <li><span class="text-white">Économie:</span> Inflation des coûts d'expansion.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: RESOURCE FLOW (Sankey) -->
+        <section>
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-white mb-2">2. Flux de Données & Crafting</h2>
+                <p class="text-gray-400 text-sm">Visualisation de l'arbre technologique et des chaînes de dépendance.</p>
+            </div>
+            
+            <div class="glass-panel p-4 rounded-lg">
+                <!-- Visualization & Content Choices: Used Plotly Sankey diagram because it perfectly represents the flow of materials (Inputs -> Processing -> Outputs) described in the "Arbre Technologique" section. It's interactive and handles complex many-to-one relationships better than static text. -->
+                <div id="resourceFlow" class="w-full h-[400px]"></div>
+                <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. Plotly via CDN. -->
+            </div>
+        </section>
+
+        <!-- SECTION 3: INFRASTRUCTURE ANALYTICS -->
+        <section>
+            <div class="flex flex-col md:flex-row justify-between items-end mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">3. Analyse Infrastructure</h2>
+                    <p class="text-gray-400 text-sm">Comparatif coût/énergie des bâtiments.</p>
+                </div>
+                <div class="flex gap-2 mt-2 md:mt-0">
+                    <button onclick="filterBuildings('all')" class="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 transition focus:ring-2 ring-[#4db8ff]">Tous</button>
+                    <button onclick="filterBuildings('production')" class="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 transition focus:ring-2 ring-[#4db8ff]">Production</button>
+                    <button onclick="filterBuildings('logistique')" class="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 transition focus:ring-2 ring-[#4db8ff]">Logistique</button>
+                    <button onclick="filterBuildings('defense')" class="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 transition focus:ring-2 ring-[#4db8ff]">Défense</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Chart -->
+                <div class="lg:col-span-2 glass-panel p-4 rounded-lg">
+                    <div class="chart-container">
+                        <canvas id="buildingChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Info Panel -->
+                <div class="glass-panel p-4 rounded-lg flex flex-col h-[380px]">
+                    <h3 class="text-md font-bold text-[#4db8ff] mb-4 border-b border-gray-700 pb-2">Détails Techniques</h3>
+                    <div id="buildingDetails" class="flex-grow overflow-y-auto space-y-3 pr-2">
+                        <!-- Dynamic Content Inserted Here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: PROGRESSION SIMULATOR -->
+        <section>
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-white mb-2">4. Simulation Économique</h2>
+                <p class="text-gray-400 text-sm">Projection des coûts d'amélioration (Scaling Exponentiel).</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Calculator -->
+                <div class="glass-panel p-6 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4">Calculateur d'Upgrade</h3>
+                    
+                    <div class="mb-6">
+                        <label class="block text-xs text-gray-500 mb-2">TYPE D'AMÉLIORATION</label>
+                        <select id="upgradeType" class="w-full bg-[#15151a] border border-gray-600 text-white p-2 rounded focus:border-[#4db8ff] outline-none">
+                            <option value="miner">Overclocking Extracteurs (Base: 1000¢)</option>
+                            <option value="belt">Moteurs Magnétiques (Base: 1000¢)</option>
+                            <option value="value">Négociation de Flux (Base: 2000¢)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex justify-between mb-2">
+                            <label class="block text-xs text-gray-500">NIVEAU CIBLE</label>
+                            <span id="levelValue" class="text-[#4db8ff] font-bold">1</span>
+                        </div>
+                        <input type="range" id="levelSlider" min="1" max="20" value="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#4db8ff]">
+                    </div>
+
+                    <div class="flex justify-between items-center border-t border-gray-700 pt-4 mt-4">
+                        <span class="text-sm text-gray-400">Coût Estimé:</span>
+                        <span id="costResult" class="text-2xl font-bold text-[#f1c40f]">1 000 ¢</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2 italic">*Formule: Base * (1.6 ^ Niveau)</p>
+                </div>
+
+                <!-- Chart -->
+                <div class="glass-panel p-4 rounded-lg">
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="upgradeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: THREATS -->
+        <section class="mb-12">
+             <div class="mb-4">
+                <h2 class="text-2xl font-bold text-[#e74c3c] mb-2">5. Protocoles de Sécurité</h2>
+                <p class="text-gray-400 text-sm">Gestion des menaces actives (Virus).</p>
+            </div>
+            
+            <div class="glass-panel p-6 rounded-lg border-l-4 border-[#e74c3c] flex flex-col md:flex-row gap-6 items-center">
+                <div class="w-full md:w-1/3 text-center md:text-left">
+                    <div class="text-4xl mb-2">👾 vs ♜</div>
+                    <h3 class="text-xl font-bold text-white">Tower Defense</h3>
+                    <p class="text-sm text-gray-400 mt-2">
+                        Dès la <strong>Phase 3</strong>, des entités corrompues ciblent le Core.
+                    </p>
+                </div>
+                
+                <div class="w-full md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-[#e74c3c]/10 p-4 rounded border border-[#e74c3c]/30">
+                        <h4 class="text-[#e74c3c] font-bold text-sm mb-1">L'ENNEMI (Virus)</h4>
+                        <ul class="text-xs text-gray-300 list-disc list-inside">
+                            <li>Apparition: Bords de carte</li>
+                            <li>Cible: Bâtiment le plus proche</li>
+                            <li>Effet: Destruction instantanée</li>
+                            <li>Evolution: PV & Vitesse augmentent par Phase</li>
+                        </ul>
+                    </div>
+                    <div class="bg-[#3498db]/10 p-4 rounded border border-[#3498db]/30">
+                        <h4 class="text-[#3498db] font-bold text-sm mb-1">LA DÉFENSE (Firewall)</h4>
+                        <ul class="text-xs text-gray-300 list-disc list-inside">
+                            <li>Coût: 1200 ¢</li>
+                            <li>Conso: -20 W</li>
+                            <li>Action: Tir Laser Automatique</li>
+                            <li>Portée: Moyenne</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-gray-700 bg-[#15151a] p-6 mt-auto">
+        <div class="max-w-7xl mx-auto text-center text-xs text-gray-600">
+            <p>LOGI_NODE DESIGN DOCUMENT // GENERATED BY CANVAS // CONFIDENTIAL</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA SETS ---
+
+        const buildingsData = [
+            { name: "Extracteur", type: "production", cost: 100, energy: -10, icon: "🔲", desc: "Mine les gisements." },
+            { name: "Convoyeur", type: "logistique", cost: 15, energy: 0, icon: "↑", desc: "Transporte les ressources." },
+            { name: "Tunnel", type: "logistique", cost: 250, energy: 0, icon: "U", desc: "Passage souterrain (Max 5 cases)." },
+            { name: "Répartiteur", type: "logistique", cost: 100, energy: 0, icon: "Y", desc: "Divise le flux 50/50." },
+            { name: "Trieur (Sorter)", type: "logistique", cost: 300, energy: -5, icon: "⚙", desc: "Filtre intelligent configurable." },
+            { name: "Traitement", type: "production", cost: 250, energy: -15, icon: "🟨", desc: "Raffine les ressources brutes." },
+            { name: "Assembleur", type: "production", cost: 800, energy: -30, icon: "🟪", desc: "Combine 2 ressources." },
+            { name: "Intégrateur", type: "production", cost: 2500, energy: -50, icon: "⬜", desc: "Combine Violet + Rose." },
+            { name: "Compresseur", type: "production", cost: 8000, energy: -150, icon: "⬛", desc: "Crée des Singularités." },
+            { name: "Générateur", type: "production", cost: 500, energy: 100, icon: "⚡", desc: "Produit de l'énergie." },
+            { name: "Firewall", type: "defense", cost: 1200, energy: -20, icon: "♜", desc: "Tourelle défensive laser." },
+            { name: "Hub Export", type: "logistique", cost: 15000, energy: -100, icon: "H", desc: "Point de vente secondaire." },
+        ];
+
+        // --- PLOTLY SANKEY (Resource Flow) ---
+        // Mapping: 0:Blue, 1:ProcBlue, 2:Orange, 3:ProcOrange, 4:Purple, 5:Pink, 6:Omega, 7:Singularity
+        const sankeyData = {
+            type: "sankey",
+            orientation: "h",
+            node: {
+                pad: 15,
+                thickness: 20,
+                line: { color: "black", width: 0.5 },
+                label: ["Donnée Brute (Bleu)", "Donnée Traitée (Vert)", "Logique Brute (Orange)", "Logique Traitée (Jaune)", "Composant (Violet)", "Quantique (Rose)", "Matière Omega (Blanc)", "Singularité (Noir)"],
+                color: ["#00d2ff", "#2ecc71", "#ff9f43", "#feca57", "#9b59b6", "#fd79a8", "#ffffff", "#333333"]
+            },
+            link: {
+                source: [0, 2, 1, 3, 4, 5, 6],
+                target: [1, 3, 4, 4, 6, 6, 7],
+                value:  [10, 10, 5, 5, 3, 3, 1], // Relative weights
+                color: ["rgba(0,210,255,0.3)", "rgba(255,159,67,0.3)", "rgba(46,204,113,0.3)", "rgba(254,202,87,0.3)", "rgba(155,89,182,0.3)", "rgba(253,121,168,0.3)", "rgba(255,255,255,0.3)"]
+            }
+        };
+
+        const sankeyLayout = {
+            font: { size: 10, color: "white" },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(0,0,0,0)",
+            margin: { l: 10, r: 10, b: 10, t: 10 },
+            height: 400
+        };
+
+        Plotly.newPlot('resourceFlow', [sankeyData], sankeyLayout, {displayModeBar: false, responsive: true});
+
+
+        // --- CHART.JS (Infrastructure Analysis) ---
+        let buildingChartInstance = null;
+
+        function renderBuildingChart(data) {
+            const ctx = document.getElementById('buildingChart').getContext('2d');
+            
+            if (buildingChartInstance) buildingChartInstance.destroy();
+
+            buildingChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.name),
+                    datasets: [
+                        {
+                            label: 'Coût (¢)',
+                            data: data.map(d => d.cost),
+                            backgroundColor: 'rgba(77, 184, 255, 0.5)',
+                            borderColor: '#4db8ff',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Conso Énergie (W)',
+                            data: data.map(d => Math.abs(d.energy)), // Absolute value for visualization
+                            type: 'line',
+                            borderColor: '#f1c40f',
+                            backgroundColor: '#f1c40f',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#aaa' } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) label += context.parsed.y;
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#aaa' }, grid: { color: '#333' } },
+                        y: { 
+                            type: 'linear', display: true, position: 'left', 
+                            ticks: { color: '#4db8ff' }, grid: { color: '#333' },
+                            title: { display: true, text: 'Coût (Crédits)', color: '#4db8ff' }
+                        },
+                        y1: { 
+                            type: 'linear', display: true, position: 'right', 
+                            ticks: { color: '#f1c40f' }, grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Énergie (Watts)', color: '#f1c40f' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- DOM MANIPULATION & INTERACTION ---
+
+        // 1. Building Filter & List
+        function filterBuildings(category) {
+            const filtered = category === 'all' 
+                ? buildingsData 
+                : buildingsData.filter(b => b.type === category);
+            
+            renderBuildingChart(filtered);
+            
+            // Update List
+            const listContainer = document.getElementById('buildingDetails');
+            listContainer.innerHTML = '';
+            filtered.forEach(b => {
+                const energyClass = b.energy > 0 ? 'text-green-400' : (b.energy === 0 ? 'text-gray-500' : 'text-yellow-500');
+                const energySign = b.energy > 0 ? '+' : '';
+                
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center bg-[#1a1a20] p-2 rounded text-sm border border-gray-700';
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl w-8 text-center">${b.icon}</span>
+                        <div>
+                            <div class="font-bold text-gray-200">${b.name}</div>
+                            <div class="text-xs text-gray-500">${b.desc}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[#4db8ff] font-mono">${b.cost}¢</div>
+                        <div class="${energyClass} font-mono text-xs">${energySign}${b.energy}W</div>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        // 2. Upgrade Calculator
+        const upgradeSlider = document.getElementById('levelSlider');
+        const upgradeSelect = document.getElementById('upgradeType');
+        const costResult = document.getElementById('costResult');
+        const levelValue = document.getElementById('levelValue');
+        let upgradeChartInstance = null;
+
+        function calculateCost(type, level) {
+            // Formula from report: Base * (1.6 ^ Level)
+            // Note: Report says cost increases by 60% per level => 1.6 multiplier
+            let base = type === 'value' ? 2000 : 1000;
+            return Math.floor(base * Math.pow(1.6, level));
+        }
+
+        function updateCalculator() {
+            const lvl = parseInt(upgradeSlider.value);
+            const type = upgradeSelect.value;
+            const cost = calculateCost(type, lvl);
+            
+            levelValue.innerText = lvl;
+            costResult.innerText = new Intl.NumberFormat('fr-FR').format(cost) + " ¢";
+            
+            updateUpgradeChart(type);
+        }
+
+        function updateUpgradeChart(type) {
+            const ctx = document.getElementById('upgradeChart').getContext('2d');
+            const labels = Array.from({length: 10}, (_, i) => i + 1); // Show next 10 levels curve
+            const data = labels.map(l => calculateCost(type, l));
+
+            if (upgradeChartInstance) upgradeChartInstance.destroy();
+
+            upgradeChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Courbe de Coût (Projection)',
+                        data: data,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { title: { display: true, text: 'Niveau', color: '#666' }, grid: { color: '#333' }, ticks: { color: '#888'} },
+                        y: { title: { display: true, text: 'Coût (Crédits)', color: '#666' }, grid: { color: '#333' }, ticks: { color: '#888'} }
+                    }
+                }
+            });
+        }
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            filterBuildings('all');
+            updateCalculator();
+            
+            // Listeners
+            upgradeSlider.addEventListener('input', updateCalculator);
+            upgradeSelect.addEventListener('change', updateCalculator);
+        });
+
+    </script>
+</body>
+</html>
